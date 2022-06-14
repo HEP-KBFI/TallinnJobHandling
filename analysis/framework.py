@@ -106,7 +106,7 @@ class SlurmWorkflow(law.slurm.SlurmWorkflow):
                             lasterror = int(l[l.find('exit code :')+len('exit code :'):])
                         else:
                             lasterror = ''
-                        if lasterror is 21 or lasterror is 23 or lasterror: # cvms or bus
+                        if lasterror == 21 or lasterror == 23 or lasterror: # cvms or bus
                             print('backlisting node!')
                             if taskRef.slurm_blacklist_nodes:
                                 if lasthost not in taskRef.slurm_blacklist_nodes:
