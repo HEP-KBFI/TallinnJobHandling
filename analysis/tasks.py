@@ -15,7 +15,7 @@ import glob
 from datetime import datetime
 from collections import OrderedDict
 from analysis.framework import Task, SlurmWorkflow
-from analysis.util import getJobDicts
+from analysis.util import getJobDicts, getPostProcJobInfo
 """
 Basic task class copied from hh-inference to handle custom file locations
 """
@@ -449,10 +449,10 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     )
 
     def gethash(self):
-        hash_ = 'Postprocessing' + '_'.join(
+        hash_ = 'Postprocessing' + '_'.join([
             str(law.util.create_hash(self.jobDicts, to_int=True)),
             self.version
-        )
+        ])
         return hash_
 
     @law.cached_workflow_property
