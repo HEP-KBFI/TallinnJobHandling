@@ -511,13 +511,13 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return super(Postprocessing, self).on_failure(exception)
 
     def output(self):
-        return self.local_target(self.branch_data['output_path'])
+        return self.local_target(os.path.basename(self.branch_data['output_path']))
 
     def build_command(self):
         cdCMD = 'cd ' + self.workDir.path
         outFileName = os.path.basename(self.output().path)
         outDirName = os.path.dirname(self.output().path)
         mvCMD = " ".join(["mv", outFileName, outDirName])
-        # cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
-        cmd = f"touch {self.branch_data['output_path']}"
+        cmd1 = f"touch {self.branch_data['output_path']}"
+        cmd = " && ".join([cdCMD, cmd1, mvCMD])
         return cmd

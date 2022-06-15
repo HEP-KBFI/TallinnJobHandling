@@ -26,4 +26,4 @@ def getJobDicts(
 
 def getPostProcJobInfo(analysis='HH/multilepton', era='2017'):
     postproc_settings = import_postproc_info(analysis, era)
-    raise postproc_settings
+    return postproc_settings
