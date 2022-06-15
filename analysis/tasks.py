@@ -199,8 +199,8 @@ class CommandTask(KBFIBaseTask):
         # call it
         with self.publish_step("running '{}' ...".format(highlighted_cmd)):
             p, lines = law.util.readable_popen(cmd, shell=True, executable="/bin/bash", **kwargs)
-            for line in lines:
-                print(line)
+            # for line in lines:
+            #     print(line)
 
         # raise an exception when the call failed and optional is not True
         if p.returncode != 0 and not optional:
@@ -513,11 +513,25 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def output(self):
         return self.local_target(os.path.basename(self.branch_data['output_path']))
 
-    def build_command(self):
-        cdCMD = 'cd ' + self.workDir.path
-        outFileName = os.path.basename(self.output().path)
-        outDirName = os.path.dirname(self.output().path)
-        mvCMD = " ".join(["mv", outFileName, outDirName])
-        cmd1 = f"touch {self.branch_data['output_path']}"
-        cmd = " && ".join([cdCMD, cmd1, mvCMD])
-        return cmd
+    # def build_command(self):
+    #     cdCMD = 'cd ' + self.workDir.path
+    #     outFileName = os.path.basename(self.output().path)
+    #     outDirName = os.path.dirname(self.output().path)
+    #     mvCMD = " ".join(["mv", outFileName, outDirName])
+    #     cmd1 = f"touch {os.path.join(self.workDir.path, outFileName)}"
+    #     cmd = " && ".join([cdCMD, cmd1, mvCMD])
+    #     return cmd
+
+    # def build_command(self)
+
+            #     entry = {
+            #     "input_path": official_nano_path,
+            #     "output_path": str(pps_file['postProc_file_path']),
+            #     "maxEntries": str(pps_file['nEvents']),
+            #     "firstEntry": str(pps_file['start_idx'])
+            # }
+
+    def run(self):
+
+        output = self.output()
+        output.dump('foobar', formatter='text')
