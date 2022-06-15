@@ -316,6 +316,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         output = self.output()
         output.dump(config,formatter='text')
 
+
 class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
 
@@ -402,11 +403,11 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return self.local_target(self.jobDicts[0]['OUTFILENAME'])
 
     def build_command(self):
-        cdCMD = 'cd '+ self.workDir.path
+        cdCMD = 'cd ' + self.workDir.path
         outFileName = self.output().path.split('/')[-1]
         outDirName = self.output().path.strip(outFileName)
-        mvCMD ="mv "+ outFileName + " " + outDirName
-        cmd = cdCMD + ' && ' + 'produceNtuple '+ str(self.branch_data) + ' && ' + mvCMD
+        mvCMD = "mv " + outFileName + " " + outDirName
+        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
         return cmd
         # outputDir=law.LocalDirectoryTarget(outDirName)
         # outputDir.touch()
@@ -427,3 +428,93 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         #     msg += "\ncommand  : {}".format(cmd)
         #     raise Exception(msg)
 
+
+class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+
+    def __init__(self, *args, **kwargs):
+        super(ProdTallinnNTuples, self).__init__(*args, **kwargs)
+
+    analysis = luigi.Parameter(
+        default='HH/multilepton',
+        significant=False,
+        description="analysis e.g. hh-multilepton",
+    )
+
+    era = luigi.Parameter(
+        default='2017',
+        significant=False,
+        description="era e.g. 2017",
+    )
+
+    def gethash(self):
+        hash_ = 'Postprocessing' + '_'.join(
+            str(law.util.create_hash(self.jobDicts, to_int=True)),
+            self.version
+        )
+        return hash_
+
+    @law.cached_workflow_property
+    def workDir(self):
+        workDirName = os.path.join(
+            os.path.expandvars('$ANALYSIS_WORKAREA'),
+            'tmp_' + self.gethash()
+        )
+        workDir = law.LocalDirectoryTarget(workDirName)
+        workDir.touch()
+        return workDir
+
+    @law.cached_workflow_property
+    def jobDicts(self):
+        job_dicts = getPostProcJobDicts(
+                self.analysis,
+                self.era
+        )
+        return job_dicts
+
+    # def create_branch_map(self):
+    #     branches = {}
+    #     for branch, branchdata in self.input()['configs']['collection'].targets.items():
+    #         branches[branch]=branchdata.path
+    #     return branches
+
+    # def workflow_requires(self):
+    #     return {'configs':CreateTallinnNtupleConfigs.req(self)}
+
+    def on_success(self):
+        if self.is_workflow():
+            os.rmdir(self.workDir.path)
+            cleanDir = os.path.join(
+                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
+                self.gethash() + '*.txt'
+            )
+            logFileList = glob.glob(cleanDir)
+            for f in logFileList:
+                os.remove(f)
+        return super(Postprocessing, self).on_success()
+
+    def on_failure(self, exception):
+        if self.is_workflow():
+            cleanDir = os.path.join(
+                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
+                self.task.gethash() + '*.txt'
+            )
+            if not self.debug:
+                os.rmdir(self.workDir.path)
+                logFileList = glob.glob(cleanDir)
+                for f in logFileList:
+                    os.remove(f)
+            else:
+                print("Encountered error, preserving workdir (to be deleted manually) ", self.workDir.path)
+                print("Encountered error, preserving logfiles (to be deleted manually) ", cleanDir)
+        return super(Postprocessing, self).on_failure(exception)
+
+    # def output(self):
+    #     return self.local_target(self.jobDicts[0]['OUTFILENAME'])
+
+    def build_command(self):
+        cdCMD = 'cd ' + self.workDir.path
+        outFileName = self.output().path.split('/')[-1]
+        outDirName = self.output().path.strip(outFileName)
+        mvCMD = " ".join(["mv", outFileName, outDirName])
+        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
+        return cmd

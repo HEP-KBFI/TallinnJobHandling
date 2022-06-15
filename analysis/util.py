@@ -2,7 +2,29 @@
 """
 Dummy function to provide inputs for the config file generation
 """
-def getJobDicts(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode='default', selection = ''):
+import os
+import json
+from cataloging.postprocessing import import_postproc_info
+
+__location__ = os.path.dirname(__file__)
+
+
+def getJobDicts(
+        analysis='hh-multilepton',
+        era='2017',
+        channel='2lss',
+        mode='default',
+        selection=''
+):
     dictList = []
-    dictList.append({'APPLYCHARGEMISIDRATE': 'True', 'WRITERS':['writers_bdtVariables_HH_2lss','writers_evtReweight_HH', 'writers_evtWeight', 'writers_fakeableHadTaus','writers_fakeableLeptons', 'writers_genHHKinematics','writers_hadTauMultiplicity', 'writers_leptonMultiplicity', 'writers_lowMassLeptonPairVeto', 'writers_met', 'writers_metFilters', 'writers_process', 'writers_run_lumi_event', 'writers_selJetsAK4', 'writers_selJetsAK4_btagLoose', 'writers_selJetsAK4_btagMedium', 'writers_selJetsAK8_Wjj', 'writers_triggerInfo', 'writers_ZbosonMassVeto', 'writers_HtoZZto4lVeto'], 'FILENAMES': ['"/hdfs/local/karl/ttHNtupleProduction/2017/2021Mar05_wPresel_nom_all_hh_multilepton/ntuples/signal_ggf_nonresonant_node_sm_hh_4v/0000/tree_1.root"'], 'OUTFILENAME': 'produceNtuple.root' , 'CMSERA': '2017', 'METFLAGS': 'config_recommendedMEtFilters_2017', 'PROCESSNAME': 'signal_ggf_nonresonant_hh', 'PROCESSHH':'signal_ggf_nonresonant_hh_wwww', 'ISMC': 'True', 'HASLHE': 'True', 'HASPS': 'False', 'MVACUTMU': '0.5', 'MVACUTE': '0.3', 'MVAWP': 'hh-multilepton', 'LUMISCALE': ["cms.PSet(central_or_shift = cms.string('central'), lumi = cms.double(0.00018092350036))", "cms.PSet( central_or_shift = cms.string('CMS_ttHl_thu_shape_HHUp'), lumi = cms.double(0.000141651207997))", "cms.PSet(central_or_shift = cms.string('CMS_ttHl_pileupUp'), lumi = cms.double(0.000180930084191))", "cms.PSet( central_or_shift = cms.string('CMS_ttHl_pileupDown'), lumi = cms.double(0.000180917254171))", "cms.PSet(central_or_shift = cms.string('CMS_ttHl_l1PreFireUp'), lumi = cms.double(0.000182202670616))", "cms.PSet(central_or_shift = cms.string('CMS_ttHl_l1PreFireDown'),lumi = cms.double(0.000179697637174))"], 'REFGENWEIGHT':'1.0', 'APPLYGENWEIGHT':'True','DYMCREWEIGHTING': 'False', 'DYMCNORMSCALEFACTORS':'False', 'L1PREFIREWEIGHT': 'True', 'LEPTONFAKERATEWEIGHTINPUTFILENAME': 'TallinnNtupleProducer/EvtWeightTools/data/FakeRate/FR_lep_mva_hh_multilepton_wFullSyst_2017_KBFI_2020Dec21_wCERNUncs2_FRErrTheshold_0p01.root', 'LEPTONFAKERATEWEIGHTHISTNAME': 'FR_mva030_el_data_comb' ,'LEPTONFAKERATEWEIGHTHISTNAMMU': 'FR_mva050_mu_data_comb', 'APPLYNONCLOSURECORRECTION': 'True', 'HADTAUFAKERATEWEIGHTINPUTFILENAME': 'TallinnNtupleProducer/EvtWeightTools/data/FakeRate/FR_deeptau_DYmumu_2017_v6.root', 'HADTAUFAKERATEWEIGHTLEADFITFUNCNAME': 'jetToTauFakeRate/deepVSjMedium/$etaBin/fitFunction_data_div_mc_hadTaus_pt', 'HADTAUFAKERATEWEIGHTSUBLEADFITFUNCNAME': 'jetToTauFakeRate/deepVSjMedium/$etaBin/fitFunction_data_div_mc_hadTaus_pt', 'HADTAUFAKERATEWEIGHTLEADGRAPHNAME': 'jetToTauFakeRate/deepVSjMedium/$etaBin/jetToTauFakeRate_mc_hadTaus_pt' , 'HADTAUFAKERATEWEIGHTSUBLEADGRAPHNAME': 'jetToTauFakeRate/deepVSjMedium/$etaBin/jetToTauFakeRate_mc_hadTaus_pt', 'TRIGGERCONF': 'config_triggers_2017', 'TRIGGERTYPE2MUUSE': 'True', 'TRIGGERTYPE1E1MUUSE': 'True' , 'TRIGGERTYPE2EUSE': 'True', 'TRIGGERTYPE1MUUSE': 'True', 'TRIGGERTYPE1EUSE': 'True', 'JETCLEANBYINDEX': 'True', 'GENMATCHBYINDEX': 'True', 'DENOMLOFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/denom_2017.root', 'DENOMNLOFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/denom_2017_nlo.root', 'HHWEIGHTHISTTITLE': 'signal_ggf_nonresonant_hh_wwww', 'HHWEIGHTSJHEP04SCANFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/jhep04_scan.dat', 'HHWEIGHTSJHEP03SCANFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/jhep03_scan.dat', 'HHWEIGHTSKLSCANFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/kl_scan.dat',  'HHWEIGHTSC2SCANFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/c2_scan.dat', 'HHWEIGHTSEXTRASCANFILE': 'TallinnNtupleProducer/EvtWeightTools/data/HHReweighting/extra_scan.dat', 'HHWEIGHTSSCANMODE': ["'JHEP04'", "'JHEP03'", "'kl'", "'c2'", "'extra'"], 'APPLYRWGTLO': 'False', 'RWGTNLOMODE':'v3', 'APPLYTOPPTRWGT': '', 'APPLYBTAGSFRATIO': 'True', 'TRIGGERINFO': 'MC', 'APPLYGENPHOTONFILTER': 'disabled' , 'ENABLEBLACKLIST': 'True', 'BLACKLISTFILENAMES': ["'TallinnNtupleProducer/Framework/data/blacklist/blacklist_postproc_2017.txt'", "'TallinnNtupleProducer/Framework/data/blacklist/blacklist_skimmed_multilepton_2017.txt'"],'BLACKLISTSAMPLENAME' : 'signal_ggf_nonresonant_node_sm_hh_4v', 'DISABLEAK8CORR': ["'JMS'", "'JMR'", "'PUPPI'"], 'HADPDFWEIGHTS': 'False', 'BTAGSFRATIOVALUES': ['central = cms.vdouble(1.0, 0.983850754831, 0.970806608203, 0.95589515666, 0.941090355157, 0.919510668991, 0.896747198034, 0.869121413881, 0.843409507134, 0.788891130366)'], 'NTUPLESELECTIONSTRING': ''})
+    dict_file = os.path.join(__location__, 'jobDict.json')
+    with open(dict_file, 'rt') as in_file:
+        dict_ = json.load(in_file)
+    dictList.append(dict_)
     return dictList
+
+
+def getPostProcJobInfo(analysis='HH/multilepton', era='2017'):
+    postproc_settings = import_postproc_info(analysis, era)
+    raise NotImplementedError("Here one should return the job info for PPS")
+
