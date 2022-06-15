@@ -133,6 +133,7 @@ class KBFIBaseTask(Task):
             else:
                 print(offset + law.util.colored("not a CommandTask", "yellow"))
 
+
 class CommandTask(KBFIBaseTask):
     """
     A task that provides convenience methods to work with shell commands, i.e., printing them on the
@@ -264,7 +265,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
     channel = luigi.Parameter(
         default='2lss',
         significant=False,
-        description="channel e.g. 2;ss",
+        description="channel e.g. 2lss",
     )
 
     mode = luigi.Parameter(
@@ -370,7 +371,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def create_branch_map(self):
         branches = {}
         for branch, branchdata in self.input()['configs']['collection'].targets.items():
-            branches[branch]=branchdata.path
+            branches[branch] = branchdata.path
         return branches
 
     def workflow_requires(self):
@@ -465,7 +466,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     @law.cached_workflow_property
     def jobDicts(self):
-        job_dicts = getPostProcJobDicts(
+        job_dicts = getPostProcJobInfo(
                 self.analysis,
                 self.era
         )
@@ -512,6 +513,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     #     return self.local_target(self.jobDicts[0]['OUTFILENAME'])
 
     def build_command(self):
+        
         cdCMD = 'cd ' + self.workDir.path
         outFileName = self.output().path.split('/')[-1]
         outDirName = self.output().path.strip(outFileName)

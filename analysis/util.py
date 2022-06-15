@@ -4,7 +4,7 @@ Dummy function to provide inputs for the config file generation
 """
 import os
 import json
-from cataloging.postprocessing import import_postproc_info
+from cataloging.postprocessing.tools import import_postproc_info
 
 __location__ = os.path.dirname(__file__)
 
@@ -26,5 +26,4 @@ def getJobDicts(
 
 def getPostProcJobInfo(analysis='HH/multilepton', era='2017'):
     postproc_settings = import_postproc_info(analysis, era)
-    raise NotImplementedError("Here one should return the job info for PPS")
-
+    raise postproc_settings
