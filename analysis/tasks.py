@@ -431,9 +431,10 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
 
 class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+    default_store = "$ANALYSIS_DATA_PATH"
 
     def __init__(self, *args, **kwargs):
-        super(ProdTallinnNTuples, self).__init__(*args, **kwargs)
+        super(Postprocessing, self).__init__(*args, **kwargs)
 
     analysis = luigi.Parameter(
         default='HH/multilepton',
@@ -477,6 +478,9 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         for branch, branchdata in enumerate(self.jobDicts):
             branchmap[branch] = branchdata
         return branchmap
+
+    def workflow_requires(self):
+        return None
 
     def on_success(self):
         if self.is_workflow():
