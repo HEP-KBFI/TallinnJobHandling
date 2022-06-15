@@ -11,8 +11,8 @@ import six
 import law
 import os
 import luigi
-from datetime import datetime
 import glob
+from datetime import datetime
 from collections import OrderedDict
 from analysis.framework import Task, SlurmWorkflow
 from analysis.util import getJobDicts
@@ -472,14 +472,11 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         )
         return job_dicts
 
-    # def create_branch_map(self):
-    #     branches = {}
-    #     for branch, branchdata in self.input()['configs']['collection'].targets.items():
-    #         branches[branch]=branchdata.path
-    #     return branches
-
-    # def workflow_requires(self):
-    #     return {'configs':CreateTallinnNtupleConfigs.req(self)}
+    def create_branch_map(self):
+        branchmap = {}
+        for branch, branchdata in enumerate(self.jobDicts):
+            branchmap[branch] = branchdata
+        return branchmap
 
     def on_success(self):
         if self.is_workflow():
@@ -509,14 +506,14 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 print("Encountered error, preserving logfiles (to be deleted manually) ", cleanDir)
         return super(Postprocessing, self).on_failure(exception)
 
-    # def output(self):
-    #     return self.local_target(self.jobDicts[0]['OUTFILENAME'])
+    def output(self):
+        return self.local_target(self.branch_data['output_path'])
 
     def build_command(self):
-        
         cdCMD = 'cd ' + self.workDir.path
-        outFileName = self.output().path.split('/')[-1]
-        outDirName = self.output().path.strip(outFileName)
+        outFileName = os.path.basename(self.output().path)
+        outDirName = os.path.dirname(self.output().path)
         mvCMD = " ".join(["mv", outFileName, outDirName])
-        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
+        # cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
+        cmd = f"touch {self.branch_data['output_path']}"
         return cmd
