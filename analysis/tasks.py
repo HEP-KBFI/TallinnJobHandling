@@ -513,14 +513,14 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def output(self):
         return self.local_target(os.path.basename(self.branch_data['output_path']))
 
-    # def build_command(self):
-    #     cdCMD = 'cd ' + self.workDir.path
-    #     outFileName = os.path.basename(self.output().path)
-    #     outDirName = os.path.dirname(self.output().path)
-    #     mvCMD = " ".join(["mv", outFileName, outDirName])
-    #     cmd1 = f"touch {os.path.join(self.workDir.path, outFileName)}"
-    #     cmd = " && ".join([cdCMD, cmd1, mvCMD])
-    #     return cmd
+    def build_command(self):
+        cdCMD = 'cd ' + self.workDir.path
+        outFileName = os.path.basename(self.output().path)
+        outDirName = os.path.dirname(self.output().path)
+        mvCMD = " ".join(["mv", outFileName, outDirName])
+        cmd1 = f"touch {os.path.join(self.workDir.path, outFileName)}"
+        cmd = " && ".join([cdCMD, cmd1, mvCMD])
+        return cmd
 
     # def build_command(self)
 
@@ -530,8 +530,3 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             #     "maxEntries": str(pps_file['nEvents']),
             #     "firstEntry": str(pps_file['start_idx'])
             # }
-
-    def run(self):
-
-        output = self.output()
-        output.dump('foobar', formatter='text')
