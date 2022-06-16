@@ -484,7 +484,8 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return None
 
     def output(self):
-        return self.local_target(os.path.basename(self.branch_data['output_path']))
+        # return self.local_target(os.path.basename(self.branch_data['output_path']))
+        return self.local_target("/home/laurits/tmp/testing.txt")
 
     def build_command(self):
         postproc_script = os.path.join(
@@ -502,7 +503,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         input_path = '/hdfs/cms/store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root'
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
         f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {output_dir} {self.branch_data['input_path']}"
-        fake_cmd = f"echo '{cmd}' >> '/home/laurits/tmp/testing.txt"
+        fake_cmd = f"echo '{cmd}' >> /home/laurits/tmp/testing.txt"
         return cmd
 
 
