@@ -1,13 +1,9 @@
-import six
 import law
 import os
 import luigi
-import glob
-from datetime import datetime
-from collections import OrderedDict
-from analysis.framework import Task, SlurmWorkflow
+from analysis.framework import SlurmWorkflow
 from analysis.util import getPostProcJobInfo
-from analysis.task import CommandTask
+from analysis.tasks import CommandTask
 import cataloging
 
 
