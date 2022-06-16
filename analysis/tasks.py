@@ -16,6 +16,7 @@ from datetime import datetime
 from collections import OrderedDict
 from analysis.framework import Task, SlurmWorkflow
 from analysis.util import getJobDicts, getPostProcJobInfo
+import cataloging
 """
 Basic task class copied from hh-inference to handle custom file locations
 """
@@ -482,45 +483,29 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def workflow_requires(self):
         return None
 
-    def on_success(self):
-        if self.is_workflow():
-            os.rmdir(self.workDir.path)
-            cleanDir = os.path.join(
-                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
-                self.gethash() + '*.txt'
-            )
-            logFileList = glob.glob(cleanDir)
-            for f in logFileList:
-                os.remove(f)
-        return super(Postprocessing, self).on_success()
-
-    def on_failure(self, exception):
-        if self.is_workflow():
-            cleanDir = os.path.join(
-                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
-                self.task.gethash() + '*.txt'
-            )
-            if not self.debug:
-                os.rmdir(self.workDir.path)
-                logFileList = glob.glob(cleanDir)
-                for f in logFileList:
-                    os.remove(f)
-            else:
-                print("Encountered error, preserving workdir (to be deleted manually) ", self.workDir.path)
-                print("Encountered error, preserving logfiles (to be deleted manually) ", cleanDir)
-        return super(Postprocessing, self).on_failure(exception)
-
     def output(self):
         return self.local_target(os.path.basename(self.branch_data['output_path']))
 
     def build_command(self):
-        cdCMD = 'cd ' + self.workDir.path
-        outFileName = os.path.basename(self.output().path)
-        outDirName = os.path.dirname(self.output().path)
-        mvCMD = " ".join(["mv", outFileName, outDirName])
-        cmd1 = f"touch {os.path.join(self.workDir.path, outFileName)}"
-        cmd = " && ".join([cdCMD, cmd1, mvCMD])
+        postproc_script = os.path.join(
+                os.path.expandvars("$CMSSW_BASE"),
+                "src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py")
+        suffix = f"_B{self.branch_data['batch_idx']}"
+        modules_list_path = os.path.join(
+                cataloging.__path__[0],
+                'postprocessing',
+                'modules.txt')
+        with open(modules_list_path, 'rt') as in_file:
+            modules = ','.join([line.strip('\n') for line in in_file])
+            modules = modules.replace('[ERA]', self.era)
+        output_dir = '/home/laurits/tmp' ## REMOVE
+        input_path = '/hdfs/cms/store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root'
+        cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
+        f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {output_dir} {self.branch_data['input_path']}"
+        fake_cmd = f"echo '{cmd}' >> '/home/laurits/tmp/testing.txt"
         return cmd
+
+
 
     # def build_command(self)
 
