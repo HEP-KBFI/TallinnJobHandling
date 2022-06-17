@@ -50,14 +50,14 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return branchmap
 
     def output(self):
-        metadict_output_dir = os.path.join(
+        metadict_output_path = os.path.join(
                 cataloging.__path__[0],
                 'analyses',
                 self.analysis,
                 self.era,
                 'metadicts',
                 f'{self.sample_name}.json')
-        return self.local_target()
+        return self.local_target(metadict_output_path)
 
     def run(self):
         dataset = DataSet(
