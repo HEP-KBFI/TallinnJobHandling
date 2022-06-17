@@ -1,6 +1,7 @@
 import law
 import os
 import luigi
+import glob
 from analysis.framework import SlurmWorkflow
 from analysis.util import getPostProcJobInfo
 from analysis.tasks import CommandTask
@@ -70,7 +71,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     def on_failure(self, exception):
         if self.is_workflow():
-            cleanDir = (os.path.expandvars("${ANALYSIS_LOGFILE_PATH}")+'/' +self.task.gethash()+'*.txt').strip(' ')
+            cleanDir = (os.path.expandvars("${ANALYSIS_LOGFILE_PATH}")+'/' +self.gethash()+'*.txt').strip(' ')
             if not self.debug:
                 os.rmdir(self.workDir.path)
                 logFileList = glob.glob(cleanDir)
