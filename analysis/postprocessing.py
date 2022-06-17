@@ -59,7 +59,9 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             modules = ','.join([line.strip('\n') for line in in_file])
             modules = modules.replace('[ERA]', self.era)
         output_dir = '/home/laurits/tmp' ## REMOVE
+        cms_loc = '/hdfs/cms/store'
+        new_dir = os.path.dirname(self.branch_data['input_path'].replace(cms_loc, output_dir))
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
-        f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {output_dir} {self.branch_data['input_path']}"
+        f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
         fake_cmd = f"echo '{cmd}' >> /home/laurits/tmp/testing.txt"
         return fake_cmd
