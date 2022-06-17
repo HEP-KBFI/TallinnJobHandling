@@ -31,7 +31,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 self.analysis,
                 self.era
         )
-        return job_dicts
+        return job_dicts[:10]
 
     def create_branch_map(self):
         branchmap = {}
@@ -43,8 +43,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return None
 
     def output(self):
-        # return self.local_target(os.path.basename(self.branch_data['output_path']))
-        return self.local_target("/home/laurits/tmp/testing.txt")
+        return self.local_target(os.path.basename(self.branch_data['output_path']))
 
     def build_command(self):
         postproc_script = os.path.join(
@@ -60,8 +59,8 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             modules = modules.replace('[ERA]', self.era)
         output_dir = '/home/laurits/tmp' ## REMOVE
         cms_loc = '/hdfs/cms/store'
+        self.branch_data['maxEntries'] = 10
         new_dir = os.path.dirname(self.branch_data['input_path'].replace(cms_loc, output_dir))
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
         f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
-        fake_cmd = f"echo '{cmd}' >> /home/laurits/tmp/testing.txt"
-        return fake_cmd
+        return cmd
