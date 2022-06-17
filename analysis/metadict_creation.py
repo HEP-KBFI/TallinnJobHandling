@@ -5,15 +5,12 @@ import cataloging
 from cataloging.analysis import DataSet
 from analysis.framework import SlurmWorkflow
 from analysis.util import getDatasetList
-from analysis.tasks import CommandTask
+from analysis.tasks import KBFIBaseTask
 
 
-class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_DATA_PATH"
     cms_local_dir = '/hdfs/cms/store'
-
-    def __init__(self, *args, **kwargs):
-        super(MetaDictCreator, self).__init__(*args, **kwargs)
 
     analysis = luigi.Parameter(
         default='HH/multilepton',

@@ -58,7 +58,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             branchmap[branch] = branchdata
         return branchmap
 
-    def workflow_requires(self):
+    def requires(self):
         return MetaDictCreator.req(self)
 
     def on_success(self):
