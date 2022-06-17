@@ -33,6 +33,12 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         description="The directory where postprocessed ntuples will be written",
     )
 
+    n_events = luigi.IntParameter(
+        default=100000,
+        significant=False,
+        description="Maximum number of events per postprocessed file",
+    )
+
     sample_name = ""
 
     @law.cached_workflow_property
@@ -63,7 +69,8 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         dataset = DataSet(
             self.branch_data,
             postproc_out_dir=self.pps_output_dir,
-            cms_local_dir=self.cms_local_dir
+            cms_local_dir=self.cms_local_dir,
+            max_events_per_file=self.n_events
         )
         metadict_output_dir = os.path.join(
                 cataloging.__path__[0],
