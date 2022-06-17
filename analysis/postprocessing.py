@@ -58,7 +58,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return branchmap
 
     def workflow_requires(self):
-        return None
+        return MetaDictCreator.req(self)
 
     def on_success(self):
         if self.is_workflow():
@@ -102,5 +102,4 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         new_dir = os.path.dirname(self.branch_data['input_path'].replace(self.cms_loc, output_dir))
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
         f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
-        # full_command = f"mv {tmp_file_loc}"
         return cmd

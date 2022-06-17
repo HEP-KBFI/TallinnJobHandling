@@ -7,7 +7,7 @@ import json
 import cataloging
 from cataloging.postprocessing.tools import import_postproc_info
 
-# __location__ = os.path.dirname(__file__)
+__location__ = os.path.dirname(__file__)
 
 
 def getJobDicts(
