@@ -33,7 +33,7 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         description="The directory where postprocessed ntuples will be written",
     )
 
-    self.sample_name = ""
+    sample_name = ""
 
     @law.cached_workflow_property
     def jobDicts(self):

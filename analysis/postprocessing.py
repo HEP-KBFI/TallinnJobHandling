@@ -98,7 +98,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             modules = modules.replace('[ERA]', self.era)
         output_dir = '/home/laurits/tmp' ## REMOVE
         self.branch_data['maxEntries'] = 10
-        new_dir = os.path.dirname(self.branch_data['input_path'].replace(cms_loc, output_dir))
+        new_dir = os.path.dirname(self.branch_data['input_path'].replace(self.cms_loc, output_dir))
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
         f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
         # full_command = f"mv {tmp_file_loc}"
