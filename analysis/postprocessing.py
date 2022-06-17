@@ -5,6 +5,7 @@ import glob
 from analysis.framework import SlurmWorkflow
 from analysis.util import getPostProcJobInfo
 from analysis.tasks import CommandTask
+from analysis.metadict_creation import MetaDictCreator
 import cataloging
 
 
