@@ -2,7 +2,7 @@ import law
 import os
 import luigi
 import cataloging
-from cataloging.analysis import Dataset
+from cataloging.analysis import DataSet
 from analysis.framework import SlurmWorkflow
 from analysis.util import getDatasetList
 from analysis.tasks import CommandTask
@@ -60,7 +60,7 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return self.local_target()
 
     def run(self):
-        dataset = Dataset(
+        dataset = DataSet(
             self.branch_data,
             postproc_out_dir=self.output_dir,
             cms_local_dir=self.cms_local_dir
