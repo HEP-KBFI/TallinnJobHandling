@@ -62,7 +62,7 @@ class MetaDictCreator(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def run(self):
         dataset = DataSet(
             self.branch_data,
-            postproc_out_dir=self.output_dir,
+            postproc_out_dir=self.pps_output_dir,
             cms_local_dir=self.cms_local_dir
         )
         metadict_output_dir = os.path.join(
