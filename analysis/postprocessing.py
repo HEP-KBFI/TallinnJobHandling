@@ -66,7 +66,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             logFileList = glob.glob(cleanDir)
             for f in logFileList:
                 os.remove(f)
-        return super(Postproduction, self).on_success()
+        return super(Postprocessing, self).on_success()
 
     def on_failure(self, exception):
         if self.is_workflow():
@@ -79,7 +79,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             else:
                 print("Encountered error, preserving workdir (to be deleted manually) ", self.workDir.path)
                 print("Encountered error, preserving logfiles (to be deleted manually) ", cleanDir)
-        return super(Postproduction, self).on_failure(exception)
+        return super(Postprocessing, self).on_failure(exception)
 
     def output(self):
         return self.local_target(self.branch_data['output_path'])
