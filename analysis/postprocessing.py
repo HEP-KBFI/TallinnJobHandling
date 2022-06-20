@@ -52,7 +52,6 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     @law.cached_workflow_property
     def jobDicts(self):
-        print(os.path.dirname(self.input()['metadicts']['collection'][1].path))
         job_dicts = getPostProcJobInfo(
                 os.path.dirname(self.input()['metadicts']['collection'][1].path)
         )
@@ -70,11 +69,6 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 self, analysis=self.analysis, era=self.era,
                 output_dir=self.output_dir, n_events=self.n_events)
         }
-
-    def requires(self):
-        return MetaDictCreator.req(
-                self, analysis=self.analysis, era=self.era,
-                output_dir=self.output_dir, n_events=self.n_events)
 
     def on_success(self):
         if self.is_workflow():
@@ -99,7 +93,11 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return super(Postprocessing, self).on_failure(exception)
 
     def output(self):
-        return self.local_target(self.branch_data['output_path'])
+        outfile_path = os.path.join(
+                self.workDir.path,
+                os.path.basename(self.branch_data['output_path'])
+        )
+        return self.local_target(outfile_path)
 
     def build_command(self):
         postproc_script = os.path.join(
@@ -127,3 +125,58 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         move_cmd = f'mv {outfile_path} {final_dir}'
         full_cmd = ' && '.join([postproc_cmd, move_cmd])
         return full_cmd
+
+
+class PostprocessingWrapper(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+    def __init__(self, *args, **kwargs):
+        super(PostprocessingWrapper, self).__init__(*args, **kwargs)
+
+    analysis = luigi.Parameter(
+        default='HH/multilepton',
+        significant=False,
+        description="analysis e.g. hh-multilepton",
+    )
+
+    era = luigi.Parameter(
+        default='2017',
+        significant=False,
+        description="era e.g. 2017",
+    )
+
+    output_dir = luigi.Parameter(
+        default='/hdfs/local/$USER',
+        significant=False,
+        description="The directory where postprocessed ntuples will be written",
+    )
+
+    n_events = luigi.IntParameter(
+        default=100000,
+        significant=False,
+        description="Maximum number of events per postprocessed file",
+    )
+
+    def create_branch_map(self):
+        branchmap = {}
+        for branch, branchdata in enumerate([{'version': self.version, 'era': self.era, 'analysis': self.analysis}]):
+            branchmap[branch] = branchdata
+        return branchmap
+
+    def output(self):
+        log_path = os.path.join(
+                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
+                'pps_wrapper.txt')
+        return self.local_target(log_path)
+
+    def on_success(self):
+        log_path = os.path.join(
+                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
+                'pps_wrapper.txt')
+        return super(Postprocessing, self).on_success()
+
+    def build_command(self):
+        cmd = f'bash pps_wrapper.sh {self.version} {"local"} {self.era} {self.analysis}'
+        log_path = os.path.join(
+                os.path.expandvars("${ANALYSIS_LOGFILE_PATH}"),
+                'pps_wrapper.txt')
+        cmd = ' && '.join([cmd, f'touch {log_path}'])
+        return cmd
