@@ -24,7 +24,7 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
         description="era e.g. 2017",
     )
 
-    pps_output_dir = luigi.Parameter(
+    output_dir = luigi.Parameter(
         default='/hdfs/local/$USER',
         significant=False,
         description="The directory where postprocessed ntuples will be written",
@@ -60,7 +60,7 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     def run(self):
         dataset = DataSet(
             self.branch_data['dataset'],
-            postproc_out_dir=self.pps_output_dir,
+            postproc_out_dir=self.output_dir,
             cms_local_dir=self.cms_local_dir,
             max_events_per_file=self.n_events
         )

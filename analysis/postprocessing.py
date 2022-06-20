@@ -34,8 +34,11 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         description="The directory where postprocessed ntuples will be written",
     )
 
-    # def gethash(self):
-    #     return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
+    n_events = luigi.IntParameter(
+        default=100000,
+        significant=False,
+        description="Maximum number of events per postprocessed file",
+    )
 
     def gethash(self):
         return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
@@ -63,7 +66,16 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return branchmap
 
     def workflow_requires(self):
-        return {'metadicts': MetaDictCreator.req(self)}
+        return {
+            'metadicts': MetaDictCreator.req(
+                self, analysis=self.analysis, era=self.era,
+                output_dir=self.output_dir, n_events=self.n_events)
+        }
+
+    def requires(self):
+        return MetaDictCreator.req(
+                self, analysis=self.analysis, era=self.era,
+                output_dir=self.output_dir, n_events=self.n_events)
 
     def on_success(self):
         if self.is_workflow():
