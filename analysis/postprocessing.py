@@ -46,7 +46,9 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     @law.cached_workflow_property
     def jobDicts(self):
+        print(self.input().targets)
         job_dicts = getPostProcJobInfo(
+                os.path.dirname(self.input().targets),
                 self.analysis,
                 self.era
         )
