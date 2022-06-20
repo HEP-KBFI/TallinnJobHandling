@@ -34,8 +34,11 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         description="The directory where postprocessed ntuples will be written",
     )
 
+    # def gethash(self):
+    #     return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
+
     def gethash(self):
-        return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
+        return 'Postproduction'+ str(law.util.create_hash([1,2,3], to_int=True)) + '_' + self.version
 
     @law.cached_workflow_property
     def workDir(self):
@@ -44,24 +47,27 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         workDir.touch()
         return workDir
 
-    @law.cached_workflow_property
-    def jobDicts(self):
-        print(self.input().targets)
-        job_dicts = getPostProcJobInfo(
-                os.path.dirname(self.input().targets),
-                self.analysis,
-                self.era
-        )
-        return job_dicts[:2]
+    # @law.cached_workflow_property
+    # def jobDicts(self):
+    #     output = yield MetaDictCreator.req(
+    #         analysis=self.analysis, era=self.era, branch=-1)
+    #     print(output['collection'].tagets)
+    #     job_dicts = getPostProcJobInfo(
+    #             os.path.dirname(self.input().targets),
+    #             self.analysis,
+    #             self.era
+    #     )
+    #     return job_dicts[:2]
 
     def create_branch_map(self):
         branchmap = {}
-        for branch, branchdata in enumerate(self.jobDicts):
+        print(self.input()['configs']['collection'].targets.items())
+        for branch, branchdata in enumerate(self.input()['configs']['collection'].targets.items()):
             branchmap[branch] = branchdata
         return branchmap
 
-    def requires(self):
-        return MetaDictCreator.req(self)
+    def workflow_requires(self):
+        return {'metadicts': MetaDictCreator.req(self)}
 
     def on_success(self):
         if self.is_workflow():
