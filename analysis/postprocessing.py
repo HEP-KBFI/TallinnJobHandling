@@ -52,10 +52,9 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     @law.cached_workflow_property
     def jobDicts(self):
+        print(os.path.dirname(self.input()['metadicts']['collection'][1].path))
         job_dicts = getPostProcJobInfo(
-                os.path.dirname(self.input()['metadicts']['collection'][1].path),
-                self.analysis,
-                self.era
+                os.path.dirname(self.input()['metadicts']['collection'][1].path)
         )
         return job_dicts[:2]
 
@@ -71,6 +70,11 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 self, analysis=self.analysis, era=self.era,
                 output_dir=self.output_dir, n_events=self.n_events)
         }
+
+    def requires(self):
+        return MetaDictCreator.req(
+                self, analysis=self.analysis, era=self.era,
+                output_dir=self.output_dir, n_events=self.n_events)
 
     def on_success(self):
         if self.is_workflow():
@@ -109,13 +113,17 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         with open(modules_list_path, 'rt') as in_file:
             modules = ','.join([line.strip('\n') for line in in_file])
             modules = modules.replace('[ERA]', self.era)
-        output_dir = '/home/laurits/tmp' ## REMOVE
         self.branch_data['maxEntries'] = 10
-        new_dir = os.path.dirname(self.branch_data['input_path'].replace(self.cms_loc, output_dir))
-        cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
-        f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
-        return cmd
-
-
-# Vaja tmp faili alguses teha see -> ehk siis output_dir on tmp kaust
-# Pärast copy ümber õigesse pps_kausta
+        final_dir = os.path.dirname(self.branch_data['input_path'].replace(
+                self.cms_loc,
+                os.path.expandvars(self.output_dir))
+        )
+        postproc_cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
+        f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {self.workDir.path} {self.branch_data['input_path']}"
+        outfile_path = os.path.join(
+                self.workDir.path,
+                os.path.basename(self.branch_data['output_path'])
+        )
+        move_cmd = f'mv {outfile_path} {final_dir}'
+        full_cmd = ' && '.join([postproc_cmd, move_cmd])
+        return full_cmd

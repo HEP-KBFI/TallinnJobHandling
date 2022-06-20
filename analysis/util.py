@@ -26,8 +26,8 @@ def getJobDicts(
     return dictList
 
 
-def getPostProcJobInfo(metadict_dir, analysis='HH/multilepton', era='2017'):
-    postproc_settings = import_postproc_info(metadict_dir, analysis, era)
+def getPostProcJobInfo(metadict_dir):
+    postproc_settings = import_postproc_info(metadict_dir)
     return postproc_settings
 
 
