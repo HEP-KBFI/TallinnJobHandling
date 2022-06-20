@@ -78,5 +78,3 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
         os.makedirs(metadict_output_dir, exist_ok=True)
         self.sample_name = dataset.sample_name
         dataset.save_json(metadict_output_dir)
-
-    # output file nimi on Dataset.sample_name

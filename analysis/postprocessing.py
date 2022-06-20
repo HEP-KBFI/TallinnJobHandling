@@ -10,7 +10,7 @@ import cataloging
 
 
 class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
-    default_store = "$ANALYSIS_DATA_PATH"
+    default_store = "$ANALYSIS_ROOT_PATH"
     cms_loc = '/hdfs/cms/store'
 
     def __init__(self, *args, **kwargs):
@@ -104,3 +104,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         cmd = f"python3 {postproc_script} -s {suffix} -N {self.branch_data['maxEntries']} --first-entry "\
         f"{self.branch_data['firstEntry']} -I cataloging.postprocessing.config {modules} {new_dir} {self.branch_data['input_path']}"
         return cmd
+
+
+# Vaja tmp faili alguses teha see -> ehk siis output_dir on tmp kaust
+# Pärast copy ümber õigesse pps_kausta
