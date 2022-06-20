@@ -38,7 +38,7 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     #     return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
 
     def gethash(self):
-        return 'Postproduction'+ str(law.util.create_hash([1,2,3], to_int=True)) + '_' + self.version
+        return 'Postproduction'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' + self.version
 
     @law.cached_workflow_property
     def workDir(self):
@@ -47,22 +47,18 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         workDir.touch()
         return workDir
 
-    # @law.cached_workflow_property
-    # def jobDicts(self):
-    #     output = yield MetaDictCreator.req(
-    #         analysis=self.analysis, era=self.era, branch=-1)
-    #     print(output['collection'].tagets)
-    #     job_dicts = getPostProcJobInfo(
-    #             os.path.dirname(self.input().targets),
-    #             self.analysis,
-    #             self.era
-    #     )
-    #     return job_dicts[:2]
+    @law.cached_workflow_property
+    def jobDicts(self):
+        job_dicts = getPostProcJobInfo(
+                os.path.dirname(self.input()['metadicts']['collection'][1].path),
+                self.analysis,
+                self.era
+        )
+        return job_dicts[:2]
 
     def create_branch_map(self):
         branchmap = {}
-        print(self.input()['metadicts']['collection'][1])
-        for branch, branchdata in enumerate(self.input()['metadicts']['collection'].targets.items()):
+        for branch, branchdata in enumerate(self.jobDicts):
             branchmap[branch] = branchdata
         return branchmap
 
