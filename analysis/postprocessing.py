@@ -61,8 +61,8 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     def create_branch_map(self):
         branchmap = {}
-        print(self.input()['configs']['collection'].targets.items())
-        for branch, branchdata in enumerate(self.input()['configs']['collection'].targets.items()):
+        print(self.input()['metadicts']['collection'][1])
+        for branch, branchdata in enumerate(self.input()['metadicts']['collection'].targets.items()):
             branchmap[branch] = branchdata
         return branchmap
 
