@@ -64,8 +64,6 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
             cms_local_dir=self.cms_local_dir,
             max_events_per_file=self.n_events
         )
-        metadict_output_dir = os.path.join(
-                self.analysis,
-                self.era)
+        metadict_output_dir = os.path.dirname(self.output().path)
         os.makedirs(metadict_output_dir, exist_ok=True)
         dataset.save_json(metadict_output_dir)
