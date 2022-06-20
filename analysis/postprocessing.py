@@ -72,11 +72,6 @@ class Postprocessing(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 output_dir=self.output_dir, n_events=self.n_events)
         }
 
-    def requires(self):
-        return MetaDictCreator.req(
-                self, analysis=self.analysis, era=self.era,
-                output_dir=self.output_dir, n_events=self.n_events)
-
     def on_success(self):
         if self.is_workflow():
             os.rmdir(self.workDir.path)
