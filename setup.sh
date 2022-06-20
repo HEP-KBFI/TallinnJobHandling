@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LAW_INSTALLATION_DIR="/home/laurits/share/law"
+LAW_INSTALLATION_DIR="/home/tolange/share/law"
 
 action() {
     # determine the directory of this file
@@ -20,6 +20,7 @@ action() {
 
     law index --verbose
 
+    export ANALYSIS_PATH="$SETUP_SCRIPT_DIR"
     # where should log files go (if not debug and sucessfull these are immidieatly cleaned -> home should be ok)
     export ANALYSIS_LOGFILE_PATH="$SETUP_SCRIPT_DIR/logs"
     mkdir -p $ANALYSIS_LOGFILE_PATH
@@ -32,7 +33,6 @@ action() {
     # root like file output e.g hdfs?
     export ANALYSIS_ROOT_PATH="$ANALYSIS_PATH/root"
 
-    export ANALYSIS_PATH="$SETUP_SCRIPT_DIR"
     export ANALYSIS_DATA_PATH="$ANALYSIS_PATH/data"
 
     source "$( law completion )" ""

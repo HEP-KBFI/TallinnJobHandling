@@ -124,8 +124,8 @@ process.produceNtuple = cms.PSet(
     branchName_jets_ak4 = cms.string('Jet'),
     branchName_jets_ak8_Hbb = cms.string('FatJet'),
     branchName_subjets_ak8_Hbb = cms.string('SubJet'),
-    branchName_jets_ak8_Wjj = cms.string('FatJetAK8LSLoose'),
-    branchName_subjets_ak8_Wjj = cms.string('SubJetAK8LSLoose'), 
+    branchName_jets_ak8_Wjj = cms.string('FatJet'),
+    branchName_subjets_ak8_Wjj = cms.string('SubJet'),
     branchName_met = cms.string('MET'),
     branchName_vertex = cms.string('PV'),
 
@@ -154,6 +154,8 @@ process.produceNtuple = cms.PSet(
     branchName_envelope_weight_down = cms.string('LHEEnvelopeWeightDown'),
     has_LHE_weights = cms.bool(False),
     has_pdf_weights = cms.bool(False),
+
+    branchName_LHE_particle = cms.string('LHEPart'),
 
     redoGenMatching = cms.bool(False),
     genMatchingByIndex = cms.bool(True),
@@ -203,10 +205,10 @@ process.produceNtuple = cms.PSet(
     isDEBUG = cms.bool(False)
 )
 
-process.fwliteInput.fileNames = cms.vstring([FILENAMES])
+process.fwliteInput.fileNames = cms.vstring([INPUTFILENAMES])
 process.fwliteOutput.fileName = cms.string('OUTFILENAME')
 process.produceNtuple.era                                            = cms.string('CMSERA')
-process.produceNtuple.redoGenMatching                                = cms.bool(False)
+process.produceNtuple.redoGenMatching                                = cms.bool(REDOGENMATCHING)
 process.produceNtuple.isDEBUG                                        = cms.bool(False)
 writers_metFilters.flags                                             = METFLAGS
 process.produceNtuple.process                                        = cms.string('PROCESSNAME')

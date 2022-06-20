@@ -15,7 +15,7 @@ from datetime import datetime
 import glob
 from collections import OrderedDict
 from analysis.framework import Task, SlurmWorkflow
-from analysis.util import getJobDicts
+from analysis.util import getJobDicts2
 """
 Basic task class copied from hh-inference to handle custom file locations
 """
@@ -196,10 +196,11 @@ class CommandTask(KBFIBaseTask):
         self.publish_message("cwd: {}".format(kwargs.get("cwd", os.getcwd())))
 
         # call it
+        print(highlighted_cmd, cmd)
         with self.publish_step("running '{}' ...".format(highlighted_cmd)):
             p, lines = law.util.readable_popen(cmd, shell=True, executable="/bin/bash", **kwargs)
-            for line in lines:
-                print(line)
+            #for line in lines:
+            #    print(line)
 
         # raise an exception when the call failed and optional is not True
         if p.returncode != 0 and not optional:
@@ -281,7 +282,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
 
     @law.cached_workflow_property
     def jobDicts(self):
-        return getJobDicts(self.analysis, self.era, self.channel, self.mode, self.selection)
+        return getJobDicts2(self.analysis, self.era, self.channel, self.mode, self.selection)
 
     def create_branch_map(self):
         branchmap = {}
@@ -290,15 +291,17 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         return branchmap
 
     def output(self):
-        return self.local_target("config_{}.py".format(self.branch))
+        return self.local_target("config_{}.py".format(self.branch_data['pnamespecific']))
 
     def createConfig(self, prms):
         template = self.template[:]
         for key in prms:
-            if key in ['WRITERS','FILENAMES','LUMISCALE', 'HHWEIGHTSSCANMODE', 'BLACKLISTFILENAMES', 'DISABLEAK8CORR', 'BLACKLISTSAMPLENAME','BTAGSFRATIOVALUES']:
+            if key=='pnamespecific': continue
+            if key in ['WRITERS','INPUTFILENAMES','LUMISCALE', 'HHWEIGHTSSCANMODE', 'BLACKLISTFILENAMES', 'DISABLEAK8CORR','BTAGSFRATIOVALUES']:
                 tempList = ''
                 for w in prms[key]: tempList += w + ','
                 template = template.replace(key,tempList[:-1])
+                print(key, tempList[:-1])
             else:
                 template = template.replace(key,prms[key])
         return template
@@ -310,7 +313,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         self.template = ""
         with open(str(os.getenv("ANALYSIS_PATH"))+'/templates/produceNtuple_cfg.py')  as f:
             lines = f.readlines()
-            for l in lines: self.template += l + "\n"
+            for l in lines: self.template += l# + "\n"
         prms = self.branch_data
         config = self.createConfig(prms)
         output = self.output()
@@ -364,7 +367,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
 
     @law.cached_workflow_property
     def jobDicts(self):
-        return getJobDicts(self.analysis, self.era, self.channel, self.mode, self.selection)
+        return getJobDicts2(self.analysis, self.era, self.channel, self.mode, self.selection)
 
     def create_branch_map(self):
         branches = {}
@@ -399,7 +402,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return super(ProdTallinnNTuples, self).on_failure(exception)
 
     def output(self):
-        return self.local_target(self.jobDicts[0]['OUTFILENAME'])
+        return self.local_target(self.jobDicts[self.branch]['OUTFILENAME'])
 
     def build_command(self):
         cdCMD = 'cd '+ self.workDir.path
