@@ -3,6 +3,7 @@
 Dummy function to provide inputs for the config file generation
 """
 import os
+import re
 import json
 import cataloging
 from cataloging.postprocessing.tools import import_postproc_info

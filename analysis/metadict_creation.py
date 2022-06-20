@@ -54,8 +54,7 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
         metadict_output_path = os.path.join(
                 self.analysis,
                 self.era,
-                'metadicts',
-                f'{self.branch_data['sample_name']}.json')
+                f'{self.branch_data["sample_name"]}.json')
         return self.local_target(metadict_output_path)
 
     def run(self):
@@ -66,10 +65,7 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
             max_events_per_file=self.n_events
         )
         metadict_output_dir = os.path.join(
-                cataloging.__path__[0],
-                'analyses',
                 self.analysis,
-                self.era,
-                'metadicts')
+                self.era)
         os.makedirs(metadict_output_dir, exist_ok=True)
         dataset.save_json(metadict_output_dir)
