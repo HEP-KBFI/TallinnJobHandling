@@ -36,8 +36,6 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
         description="Maximum number of events per postprocessed file",
     )
 
-    sample_name = ""
-
     @law.cached_workflow_property
     def jobDicts(self):
         job_dicts = getDatasetList(
@@ -54,17 +52,15 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
 
     def output(self):
         metadict_output_path = os.path.join(
-                cataloging.__path__[0],
-                'analyses',
                 self.analysis,
                 self.era,
                 'metadicts',
-                f'{self.sample_name}.json')
+                f'{self.branch_data['sample_name']}.json')
         return self.local_target(metadict_output_path)
 
     def run(self):
         dataset = DataSet(
-            self.branch_data,
+            self.branch_data['dataset'],
             postproc_out_dir=self.pps_output_dir,
             cms_local_dir=self.cms_local_dir,
             max_events_per_file=self.n_events
@@ -76,5 +72,4 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
                 self.era,
                 'metadicts')
         os.makedirs(metadict_output_dir, exist_ok=True)
-        self.sample_name = dataset.sample_name
         dataset.save_json(metadict_output_dir)
