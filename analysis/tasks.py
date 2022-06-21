@@ -376,7 +376,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return branches
 
     def workflow_requires(self):
-        return {'configs':CreateTallinnNtupleConfigs.req(self)}
+        return {'configs':CreateTallinnNtupleConfigs.req(self,workflow="local",_prefer_cli=["workflow", "version","mode","se;ection"])}
 
     def on_success(self):
         if self.is_workflow():
@@ -411,22 +411,171 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         mvCMD ="mv "+ outFileName + " " + outDirName
         cmd = cdCMD + ' && ' + 'produceNtuple '+ str(self.branch_data) + ' && ' + mvCMD
         return cmd
-        # outputDir=law.LocalDirectoryTarget(outDirName)
-        # outputDir.touch()
-        # with self.publish_step("running '{}' ...".format(cmd)):
-        #     p, lines = law.util.readable_popen(cmd, shell=True, executable="/bin/bash")
-        #     for line in lines:
-        #         print(line)
 
-        # # raise an exception when the call failed and optional is not True
-        # if p.returncode != 0 and not optional:
-        #     # when requested, make the tmp_dir non-temporary to allow for checks later on
-        #     if tmp_dir and not self.cleanup_tmp_on_error:
-        #         tmp_dir.is_tmp = False
+"""
+ Task to create the configs for running TallinnNtuple jobs.
+This is later to be done with the file catalog
+"""
+class CreateTallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+    default_store = "$ANALYSIS_CONFIG_PATH"
+    analysis = luigi.Parameter(
+        default='hh-multilepton',
+        significant=False,
+        description="analysis e.g. hh-multilepton",
+    )
 
-        #     # raise exception
-        #     msg = "command execution failed"
-        #     msg += "\nexit code: {}".format(p.returncode)
-        #     msg += "\ncommand  : {}".format(cmd)
-        #     raise Exception(msg)
+    era = luigi.Parameter(
+        default='2017',
+        significant=False,
+        description="era e.g. 2017",
+    )
 
+    channel = luigi.Parameter(
+        default='2lss',
+        significant=False,
+        description="channel e.g. 2;ss",
+    )
+
+    mode = luigi.Parameter(
+        default='default',
+        significant=False,
+        description="mode e.g. default",
+    )
+
+    selection = luigi.Parameter(
+        default='',
+        significant=False,
+        description="selection e.g. ''",
+    )
+
+    region = luigi.Parameter(
+        default='OS_SR',
+        significant=True,
+        description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
+    )
+
+    withSyst =  luigi.BoolParameter(
+        default=True,
+        significant=False,
+        description="with or without systematics"
+    )
+
+    def workflow_requires(self):
+        return {'ntuples':ProdTallinnNTuples.req(self, _prefer_cli=["workflow","version"])}
+
+    def create_branch_map(self):
+        branches = {}
+        ntuples = self.input()['ntuples']['collection'].targets.items()
+        to_run = ['central', 'CMS_ttHl_tauESUp']
+        if not self.withSyst:
+            to_run=['central']
+        for branch, branchdata in ntuples:
+            branches[branch]=[branchdata.path,self.region]
+        outbranches={}
+        for e, en in enumerate(to_run):
+            for key in branches:
+                outbranches[e*len(branches)+int(key)] = [branches[key][0],branches[key][1],en]
+        return outbranches
+
+    def output(self):
+        ntuple = self.branch_data[0].split('/')[-1]
+        return self.local_target(self.branch_data[1] + "/config_analyze_{sampleandcategory}_{srorcr}_{systorshift}.py".format(sampleandcategory=ntuple.strip('ntuple_').strip('.root'),srorcr=self.branch_data[1],systorshift=self.branch_data[2]))
+
+    def createConfig(self, prms):
+        template = self.template[:]
+        template = template.replace('INFILE',prms[0])
+        outfilebase = prms[0].split('/')[-1].strip('ntuple_').strip('.root')+'_'+prms[1]
+        template = template.replace('ANOUTFILE',outfilebase+'.root')
+        template = template.replace('ANOUTFILE','rle_'+outfilebase+'.txt')
+        template = template.replace('SYSTORSHIFT',prms[2])
+        template = template.replace('PROCESS',outfilebase)
+        if self.channel is '2lss':
+            template = template.replace('CHANNELINPUTS','from TallinnAnalysis.HistogramTools.datacard_HH_2lss_cfi import datacard_HH_2lss_nonresonant as histograms_datacard_HH_2lss_nonresonant, datacard_HH_2lss_resonant_spin0 as histograms_datacard_HH_2lss_resonant_spin0, datacard_HH_2lss_resonant_spin2 as histograms_datacard_HH_2lss_resonant_spin2')
+            sel = ''
+            basesel = 'nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25.  && lep1_tightCharge >= 2 && lep2_pt > 15.  && lep2_tightCharge >= 2  && tau1_pt > 20. && tau1_isTight && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters && lep2_isTight'
+            if prms[1] is 'OS_SR':
+                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep1_charge*lep2_charge < 0"
+            elif prms[1] is 'SS_SR':
+                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep1_charge*lep2_charge > 0"
+            elif prms[1] is 'OS_Fakable':
+                sel = basesel + "lep1_isFakeable && lep2_isFakebale && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge < 0"
+            elif prms[1] is 'SS_Fakable':
+                sel = basesel + "lep1_isFakeable && lep2_isFakebale && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge > 0"
+            template = template.replace('SELECTION', sel)
+            template = template.replace('HISTPLUGINS','histograms_datacard_HH_2lss_nonresonant')
+        else:
+            raise NotImplementedError("channel not implemented")
+        return template
+
+    def gethash(self):
+        return 'ProdTallinnNTuples'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_' +self.version
+
+    def run(self):
+        self.template = ""
+        with open(str(os.getenv("ANALYSIS_PATH"))+'/templates/analyze_cfg.py')  as f:
+            lines = f.readlines()
+            for l in lines: self.template += l# + "\n"
+        prms = self.branch_data
+        config = self.createConfig(prms)
+        output = self.output()
+        output.dump(config,formatter='text')
+
+"""
+ Task to create the configs for running TallinnNtuple jobs.
+This is later to be done with the file catalog
+"""
+class CreateTallinnAnalyzeConfigs(law.WrapperTask):
+    default_store = "$ANALYSIS_CONFIG_PATH"
+    analysis = luigi.Parameter(
+        default='hh-multilepton',
+        significant=False,
+        description="analysis e.g. hh-multilepton",
+    )
+
+    era = luigi.Parameter(
+        default='2017',
+        significant=False,
+        description="era e.g. 2017",
+    )
+
+    channel = luigi.Parameter(
+        default='2lss',
+        significant=False,
+        description="channel e.g. 2;ss",
+    )
+
+    mode = luigi.Parameter(
+        default='default',
+        significant=False,
+        description="mode e.g. default",
+    )
+
+    selection = luigi.Parameter(
+        default='',
+        significant=False,
+        description="selection e.g. ''",
+    )
+
+    version = luigi.Parameter(
+        default=None,
+        significant=False,
+        description="version",
+    )
+
+    workflow = luigi.Parameter(
+        default="slurm",
+        significant=False,
+        description="local or slurm",
+    )
+
+    withSyst =  luigi.BoolParameter(
+        default=True,
+        significant=False,
+        description="with or without systematics"
+    )
+
+    def requires(self):
+        yield CreateTallinnAnalyzeConfigsForRegion(region='OS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
+        yield CreateTallinnAnalyzeConfigsForRegion(region='SS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
+        yield CreateTallinnAnalyzeConfigsForRegion(region='OS_Fakable', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
+        yield CreateTallinnAnalyzeConfigsForRegion(region='SS_Fakable',  version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)

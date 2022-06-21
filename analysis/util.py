@@ -156,7 +156,7 @@ def getJobDicts2(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode
         sdict['ISMC'] = 'True'
         sdict['HASLHE'] = 'True'
         sdict['HASPS'] = 'False'
-        sdict['OUTFILENAME']='ntuple_'+meta_dictionary_hh[key]['sample_category']+ '_' +meta_dictionary_hh[key]['process_name_specific'] + '_'+ era+ '.root'
+        sdict['OUTFILENAME']='ntuple_' +meta_dictionary_hh[key]['process_name_specific'] + '_'+ era+ '.root'
         sdict['INPUTFILENAMES']=['"/hdfs/local/snandan/hhAnalysis/2017/official_nanoaod_file/F1B4499C-4A59-D142-8C2E-8364C1C6F90Cii.root"']
         #sdict['INPUTFILENAMES']=['"/hdfs/local/karl/ttHNtupleProduction/2017/2021Mar05_wPresel_nom_all_hh_multilepton/ntuples/signal_ggf_nonresonant_node_sm_hh_4v/0000/tree_1.root"']
         sdict['APPLYTOPPTRWGT']=''
@@ -176,4 +176,4 @@ def getJobDicts2(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode
         sdict['BLACKLISTSAMPLENAME']='signal_ggf_nonresonant_node_sm_hh_4v'
         outlist.append(sdict)
     return outlist
-print getJobDicts2(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode='default', selection = '')
+#print getJobDicts2(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode='default', selection = '')
