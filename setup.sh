@@ -20,6 +20,7 @@ action() {
 
     law index --verbose
 
+    export ANALYSIS_PATH="$SETUP_SCRIPT_DIR"
     # where should log files go (if not debug and sucessfull these are immidieatly cleaned -> home should be ok)
     export ANALYSIS_LOGFILE_PATH="$SETUP_SCRIPT_DIR/logs"
     mkdir -p $ANALYSIS_LOGFILE_PATH
