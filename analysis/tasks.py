@@ -11,8 +11,8 @@ import six
 import law
 import os
 import luigi
-from datetime import datetime
 import glob
+from datetime import datetime
 from collections import OrderedDict
 from analysis.framework import Task, SlurmWorkflow
 from analysis.util import getJobDicts2
@@ -133,6 +133,7 @@ class KBFIBaseTask(Task):
             else:
                 print(offset + law.util.colored("not a CommandTask", "yellow"))
 
+
 class CommandTask(KBFIBaseTask):
     """
     A task that provides convenience methods to work with shell commands, i.e., printing them on the
@@ -199,8 +200,6 @@ class CommandTask(KBFIBaseTask):
         print(highlighted_cmd, cmd)
         with self.publish_step("running '{}' ...".format(highlighted_cmd)):
             p, lines = law.util.readable_popen(cmd, shell=True, executable="/bin/bash", **kwargs)
-            #for line in lines:
-            #    print(line)
 
         # raise an exception when the call failed and optional is not True
         if p.returncode != 0 and not optional:
@@ -265,7 +264,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
     channel = luigi.Parameter(
         default='2lss',
         significant=False,
-        description="channel e.g. 2;ss",
+        description="channel e.g. 2lss",
     )
 
     mode = luigi.Parameter(
@@ -318,6 +317,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         config = self.createConfig(prms)
         output = self.output()
         output.dump(config,formatter='text')
+
 
 class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
@@ -372,7 +372,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     def create_branch_map(self):
         branches = {}
         for branch, branchdata in self.input()['configs']['collection'].targets.items():
-            branches[branch]=branchdata.path
+            branches[branch] = branchdata.path
         return branches
 
     def workflow_requires(self):
@@ -405,11 +405,11 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         return self.local_target(self.jobDicts[self.branch]['OUTFILENAME'])
 
     def build_command(self):
-        cdCMD = 'cd '+ self.workDir.path
+        cdCMD = 'cd ' + self.workDir.path
         outFileName = self.output().path.split('/')[-1]
         outDirName = self.output().path.strip(outFileName)
-        mvCMD ="mv "+ outFileName + " " + outDirName
-        cmd = cdCMD + ' && ' + 'produceNtuple '+ str(self.branch_data) + ' && ' + mvCMD
+        mvCMD = "mv " + outFileName + " " + outDirName
+        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
         return cmd
 
 """
@@ -578,4 +578,4 @@ class CreateTallinnAnalyzeConfigs(law.WrapperTask):
         yield CreateTallinnAnalyzeConfigsForRegion(region='OS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
         yield CreateTallinnAnalyzeConfigsForRegion(region='SS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
         yield CreateTallinnAnalyzeConfigsForRegion(region='OS_Fakable', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
-        yield CreateTallinnAnalyzeConfigsForRegion(region='SS_Fakable',  version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
+        yield CreateTallinnAnalyzeConfigsForRegion(region='SS_Fakable',  version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)=

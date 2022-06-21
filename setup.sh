@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LAW_INSTALLATION_DIR="/home/tolange/share/law"
+LAW_INSTALLATION_DIR="/home/laurits/share/law"
 
 action() {
     # determine the directory of this file
@@ -25,11 +25,13 @@ action() {
     export ANALYSIS_LOGFILE_PATH="$SETUP_SCRIPT_DIR/logs"
     mkdir -p $ANALYSIS_LOGFILE_PATH
 
+    export ANALYSIS_PATH="$SETUP_SCRIPT_DIR"
+
     #workarea where can we safely create files e.g. not hdfs but scratch?
     export ANALYSIS_WORKAREA="$SETUP_SCRIPT_DIR"
-
     # config like output e.g. scratch-persistent
     export ANALYSIS_CONFIG_PATH="$ANALYSIS_PATH/config"
+
     # root like file output e.g hdfs?
     export ANALYSIS_ROOT_PATH="$ANALYSIS_PATH/root"
 
