@@ -23,7 +23,6 @@ def getJobDicts(
         dict_ = json.load(in_file)
     dictList.append(dict_)
     return dictList
-    return dictList
 
 
 def getJobDicts2(analysis = 'hh-multilepton', era='2017', channel = '2lss', mode='default', selection = ''):
