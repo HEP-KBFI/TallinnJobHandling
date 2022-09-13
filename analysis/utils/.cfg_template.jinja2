@@ -159,9 +159,9 @@ process.produceNtuple = cms.PSet(
     )
 )
 
-writers_triggerInfo.PD = cms.string("MC")
-writers_metFilters.flags = config_recommendedMEtFilters_2018
-writers_genPhotonFilter.apply_genPhotonFilter = cms.string("disabled")
+writers_triggerInfo.PD = cms.string(" {{ writers_triggerInfo.PD }}")
+writers_metFilters.flags = {{ writers_metFilters.flags }}
+writers_genPhotonFilter.apply_genPhotonFilter = cms.string("{{ writers_genPhotonFilter.apply_genPhotonFilter }}")
 process.produceNtuple.triggers = {{ triggers.config }}
 process.produceNtuple.triggers.type_2mu.use_it = cms.bool({{ triggers.type_2mu.use_it }})
 process.produceNtuple.triggers.type_1e1mu.use_it = cms.bool({{ triggers.type_1e1mu.use_it }})
