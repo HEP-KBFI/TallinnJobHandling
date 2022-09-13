@@ -359,8 +359,9 @@ def write_cfg_file(
                                             era,
                                             channel)
     prodNtuple_rows = construct_prodNtuple_cfi(dataset_cfg)
+    sample_name = dataset_cfg['sample_name']
     for i, (fwliteInput_cfi, fwliteOutput_cfi) in enumerate(zip(fwliteInput_cfis, fwliteOutput_cfis)):
-        output_path = os.path.join(output_dir, f'tree_{i}_cfg.py')
+        output_path = os.path.join(output_dir, f'{sample_name}_tree_{i}_cfg.py')
         with open(output_path, 'wt') as out_file:
             for line in CFG_STUB:
                 out_file.write(line)
@@ -383,17 +384,3 @@ def write_cfg_file(
                     out_file.write(f'process.produceNtuple.triggers.{key}.use_it = cms.bool({value["use_it"]})\n')
         output_paths.append(output_path)
     return output_paths
-
-
-
-
-# # dataset_cfi_path = '/home/laurits/Analysis/CMSSW_12_3_1/src/TallinnJobHandling/data/MetaDictFractionCreator/v1/HH/multilepton/2018/fragments/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8.json'
-# dataset_cfi_path = '/home/laurits/Analysis/CMSSW_12_3_1/src/TallinnJobHandling/data/MetaDictFractionCreator/v1/HH/multilepton/2018/fragments/GluGluToHHTo4V_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8.json'
-
-
-# output_paths = write_cfg_file(
-#                             '/home/laurits/tmp/test_cfg',
-#                             dataset_cfi_path,
-#                             'HH/multilepton',
-#                             '2018',
-#                             '2lss_leq1tau')

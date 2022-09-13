@@ -1,0 +1,170 @@
+import FWCore.ParameterSet.Config as cms
+from TallinnNtupleProducer.Framework.recommendedMEtFilters_cfi import \
+    recommendedMEtFilters_2016 as config_recommendedMEtFilters_2016, \
+    recommendedMEtFilters_2017 as config_recommendedMEtFilters_2017, \
+    recommendedMEtFilters_2018 as config_recommendedMEtFilters_2018
+from TallinnNtupleProducer.Framework.triggers_cfi import \
+    triggers_2016 as config_triggers_2016, \
+    triggers_2018 as config_triggers_2018, \
+    triggers_2018 as config_triggers_2018
+from TallinnNtupleProducer.Writers.BDTVarWriter_HH_2lss_cfi import bdtVariables_HH_2lss as writers_bdtVariables_HH_2lss
+from TallinnNtupleProducer.Writers.EvtReweightWriter_HH_cfi import evtReweight_HH as writers_evtReweight_HH
+from TallinnNtupleProducer.Writers.EvtReweightWriter_tH_cfi import evtReweight_tH as writers_evtReweight_tH
+from TallinnNtupleProducer.Writers.EvtWeightWriter_cfi import evtWeight as writers_evtWeight
+from TallinnNtupleProducer.Writers.GenHHKinematicsWriter_cfi import genHHKinematics as writers_genHHKinematics
+from TallinnNtupleProducer.Writers.GenPhotonFilterWriter_cfi import genPhotonFilter as writers_genPhotonFilter
+from TallinnNtupleProducer.Writers.EvtInfoWriter_cfi import evtInfo as writers_evtInfo
+from TallinnNtupleProducer.Writers.HtoZZto4lVetoWriter_cfi import HtoZZto4lVeto as writers_HtoZZto4lVeto
+from TallinnNtupleProducer.Writers.LowMassLeptonPairVetoWriter_cfi import lowMassLeptonPairVeto as writers_lowMassLeptonPairVeto
+from TallinnNtupleProducer.Writers.MEtFilterWriter_cfi import metFilters as writers_metFilters
+from TallinnNtupleProducer.Writers.ProcessWriter_cfi import process as writers_process
+from TallinnNtupleProducer.Writers.RecoHadTauMultiplicityWriter_cfi import hadTauMultiplicity as writers_hadTauMultiplicity
+from TallinnNtupleProducer.Writers.RecoHadTauWriter_cfi import fakeableHadTaus as writers_fakeableHadTaus
+from TallinnNtupleProducer.Writers.RecoJetWriterAK4_cfi import \
+    selJetsAK4 as writers_selJetsAK4, \
+    selJetsAK4_btagLoose as writers_selJetsAK4_btagLoose, \
+    selJetsAK4_btagMedium as writers_selJetsAK4_btagMedium
+from TallinnNtupleProducer.Writers.RecoJetWriterAK8_Wjj_cfi import selJetsAK8_Wjj as writers_selJetsAK8_Wjj
+from TallinnNtupleProducer.Writers.RecoLeptonMultiplicityWriter_cfi import leptonMultiplicity as writers_leptonMultiplicity
+from TallinnNtupleProducer.Writers.RecoLeptonWriter_cfi import fakeableLeptons as writers_fakeableLeptons
+from TallinnNtupleProducer.Writers.RecoMEtWriter_cfi import met as writers_met
+from TallinnNtupleProducer.Writers.RunLumiEventWriter_cfi import run_lumi_event as writers_run_lumi_event
+from TallinnNtupleProducer.Writers.TriggerInfoWriter_cfi import triggerInfo as writers_triggerInfo
+from TallinnNtupleProducer.Writers.ZbosonMassVetoWriter_cfi import ZbosonMassVeto as writers_ZbosonMassVeto
+
+
+process = cms.PSet()
+
+process.fwliteInput = cms.PSet(
+    fileNames = cms.vstring([
+        {% for dataset_file in fwliteInput %}"{{ dataset_file }}"
+        {% endfor %}
+    ]),
+    skipEvents = cms.int32({{ skipEvents }}),
+    maxEvents = cms.int32({{ maxEvents }}),
+    outputEvery = cms.uint32({{ outputEvery }})
+)
+
+process.fwliteOutput = cms.PSet(
+    fileName = cms.string("{{ fwliteOutput }}")
+)
+
+process.produceNtuple = cms.PSet(
+    process = cms.string("{{ process }}"),
+    era = cms.string("{{ era }}"),
+    lumiScale = cms.VPSet([
+        {% for ls in lumiScale %}cms.PSet(
+            central_or_shift = cms.string("{{ ls.central_or_shift }}"),
+            lumi = cms.double({{ ls.lumi }})
+        {% endfor %}
+    ]),
+    ref_genWeight = cms.double({{ ref_genWeight }}),
+    apply_genWeight = cms.bool({{ apply_genWeight }}),
+    isMC = cms.bool({{ isMC }}),
+    isDEBUG = cms.bool({{ isDEBUG }}),
+    apply_DYMCReweighting = cms.bool({{ apply_DYMCReweighting }}),
+    apply_LHEVpt_rwgt = cms.bool({{ apply_LHEVpt_rwgt }}),
+    apply_topPtReweighting = cms.string("{{ apply_topPtReweighting }}"),
+    apply_l1PreFireWeight = cms.bool({{ apply_l1PreFireWeight }}),
+    isCP5 = cms.bool({{ isCP5 }}),
+    evtWeight = cms.PSet(
+        apply = cms.bool({{ evtWeight.apply }}),
+        histogramFile = cms.string("{{ evtWeight.histogramFile }}"),
+        histogramName = cms.string("{{ evtWeight.histogramName }}"),
+        branchNameXaxis = cms.string("{{ evtWeight.branchNameXaxis }}"),
+        branchNameYaxis = cms.string("{{ evtWeight.branchNameYaxis }}"),
+        branchTypeXaxis = cms.string("{{ evtWeight.branchTypeXaxis }}"),
+        branchTypeYaxis = cms.string("{{ evtWeight.branchTypeYaxis }}")
+    ),
+    has_PS_weights = cms.bool({{ has_PS_weights }}),
+    apply_LHE_nom = cms.bool({{ apply_LHE_nom }}),
+    has_LHE_weights = cms.bool({{ has_LHE_weights }}),
+    has_pdf_weights = cms.bool({{ has_pdf_weights }}),
+    pdfSettings = cms.PSet(
+        lhaid = cms.int32({{ pdfSettings.lhaid }}),
+        norm = cms.vdouble({{ pdfSettings.norm|join(', ') }}),
+        saveAllMembers = cms.bool({{ pdfSettings.saveAllMembers }})
+    ),
+    apply_DYMCNormScaleFactors = cms.bool({{ apply_DYMCNormScaleFactors }}),
+    fatJet_corrections = cms.vstring({{ fatJet_corrections|join(', ') }}),
+    treeName = cms.string("{{ treeName }}"),
+    hadTauWP_againstJets_fakeable = cms.string("{{ hadTauWP_againstJets_fakeable }}"),
+    hadTauWP_againstElectrons = cms.string("{{ hadTauWP_againstElectrons }}"),
+    hadTauWP_againstMuons = cms.string("{{ hadTauWP_againstMuons }}"),
+    hadTauFakeRateWeight = cms.PSet(
+        lead = cms.PSet(
+            absEtaBins = cms.vdouble({{ hadTauFakeRateWeight.lead.absEtaBins|join(', ') }}),
+            graphName = cms.string("{{ hadTauFakeRateWeight.lead.graphName }}"),
+            applyGraph = cms.bool({{ hadTauFakeRateWeight.lead.applyGraph }}),
+            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.lead.fitfunctionName }}"),
+            applyFitFunction = cms.bool({{ hadTauFakeRateWeight.lead.applyFitFunction }})
+        ),
+        sublead = cms.PSet(
+            absEtaBins = cms.vdouble({{ hadTauFakeRateWeight.sublead.absEtaBins|join(', ') }}),
+            graphName = cms.string("{{ hadTauFakeRateWeight.sublead.graphName }}"),
+            applyGraph = cms.bool({{ hadTauFakeRateWeight.sublead.applyGraph }}),
+            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.sublead.fitfunctionName }}"),
+            applyFitFunction = cms.bool({{ hadTauFakeRateWeight.sublead.applyFitFunction }})
+        ),
+        inputFileName = cms.string("{{ hadTauFakeRateWeight.inputFileName }}")
+    ),
+    split_jes = cms.bool({{ split_jes }}),
+    split_jer = cms.bool({{ split_jer }}),
+    reapply_JEC = cms.bool({{ reapply_JEC }}),
+    apply_smearing = cms.bool({{ apply_smearing }}),
+    enable_phiModulationCorr = cms.bool({{ enable_phiModulationCorr }}),
+    branchName_electrons = cms.string("{{ branchName_electrons }}"),
+    branchName_muons = cms.string("{{ branchName_muons }}"),
+    branchName_hadTaus = cms.string("{{ branchName_hadTaus }}"),
+    branchName_jets_ak4 = cms.string("{{ branchName_jets_ak4 }}"),
+    branchName_jets_ak8 = cms.string("{{ branchName_jets_ak8 }}"),
+    branchName_subjets_ak8 = cms.string("{{ branchName_subjets_ak8 }}"),
+    branchName_met = cms.string("{{ branchName_met }}"),
+    branchName_genJetAK8 = cms.string("{{ branchName_genJetAK8 }}"),
+    branchName_genSubJetAK8 = cms.string("{{ branchName_genSubJetAK8 }}"),
+    branchName_rawMet = cms.string("{{ branchName_rawMet }}"),
+    branchName_vertex = cms.string("{{ branchName_vertex }}"),
+    branchName_genPart = cms.string("{{ branchName_genPart }}"),
+    branchName_genHadTaus = cms.string("{{ branchName_genHadTaus }}"),
+    branchName_genJets = cms.string("{{ branchName_genJets }}"),
+    branchName_corrT1METJet = cms.string("{{ branchName_corrT1METJet }}"),
+    branchName_PSweights = cms.string("{{ branchName_PSweights }}"),
+    branchName_LHE_nom = cms.string("{{ branchName_LHE_nom }}"),
+    branchName_scale_weights = cms.string("{{ branchName_scale_weights }}"),
+    branchName_pdf_weights = cms.string("{{ branchName_pdf_weights }}"),
+    branchName_LHE_particle = cms.string("{{ branchName_LHE_particle }}"),
+    jetCleaningByIndex = cms.bool({{ jetCleaningByIndex }}),
+    genMatchRecoJets = cms.bool({{ genMatchRecoJets }}),
+    selEventsFileName = cms.string("{{ selEventsFileName }}"),
+    lep_mva_cut_mu = cms.double({{ lep_mva_cut_mu }}),
+    lep_mva_cut_e = cms.double({{ lep_mva_cut_e }}),
+    lep_mva_wp = cms.string("{{ lep_mva_wp }}"),
+    leptonFakeRateWeight = cms.PSet(
+        histogramName_e = cms.string("{{ leptonFakeRateWeight.histogramName_e }}"),
+        histogramName_mu = cms.string("{{ leptonFakeRateWeight.histogramName_mu }}"),
+        applyNonClosureCorrection = cms.bool({{ leptonFakeRateWeight.applyNonClosureCorrection }}),
+        inputFileName = cms.string("{{ leptonFakeRateWeight.inputFileName }}")
+    ),
+    apply_pileupJetID = cms.string("{{ apply_pileupJetID }}"),
+    numNominalLeptons = cms.uint32({{ numNominalLeptons }}),
+    numNominalHadTaus = cms.uint32({{ numNominalHadTaus }}),
+    applyNumNominalLeptonsCut = cms.bool({{ applyNumNominalLeptonsCut }}),
+    applyNumNominalHadTausCut = cms.bool({{ applyNumNominalHadTausCut }}),
+    hadTauWP_againstJets_tight = cms.string("{{ hadTauWP_againstJets_tight }}"),
+    apply_chargeMisIdRate = cms.bool({{ apply_chargeMisIdRate }}),
+    selection = cms.string("{{ selection }}"),
+    writerPlugins = cms.VPSet(
+        {% for plugin in writerPlugins %}{{ plugin }}
+        {% endfor %}
+    )
+)
+
+writers_triggerInfo.PD = cms.string("MC")
+writers_metFilters.flags = config_recommendedMEtFilters_2018
+writers_genPhotonFilter.apply_genPhotonFilter = cms.string("disabled")
+process.produceNtuple.triggers = {{ triggers.config }}
+process.produceNtuple.triggers.type_2mu.use_it = cms.bool({{ triggers.type_2mu.use_it }})
+process.produceNtuple.triggers.type_1e1mu.use_it = cms.bool({{ triggers.type_1e1mu.use_it }})
+process.produceNtuple.triggers.type_2e.use_it = cms.bool({{ triggers.type_2e.use_it }})
+process.produceNtuple.triggers.type_1mu.use_it = cms.bool({{ triggers.type_1mu.use_it }})
+process.produceNtuple.triggers.type_1e.use_it = cms.bool({{ triggers.type_1e.use_it }})
