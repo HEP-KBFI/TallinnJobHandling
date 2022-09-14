@@ -44,14 +44,14 @@ def collect_prodNtuple_entries(
     return dataset_cfi
 
 
-def chunk_fwliteInput_fileNames(dataset_cfi, max_events):
-    """ Chunks all the dataset files into chunks of less than max_events to be
+def chunk_fwliteInput_fileNames(dataset_cfi, job_max_events):
+    """ Chunks all the dataset files into chunks of less than job_max_events to be
     processed in a single job.
 
         Args:
             dataset_cfi : dict
                      file for a given dataset
-            max_events : int
+            job_max_events : int
                 Number of maximum events to be processed within one job. Actual
                 max events to be processed is +- 10% of the given number.
 
@@ -64,10 +64,10 @@ def chunk_fwliteInput_fileNames(dataset_cfi, max_events):
     input_paths = []
     job_events = 0
     for input_path, n_events in dataset_files.items():
-        if job_events < 0.9*max_events:
+        if job_events < 0.9*job_max_events:
             job_events += n_events
             input_paths.append(input_path)
-        elif job_events > max_events * 0.9 and job_events + n_events < max_events*1.1:
+        elif job_events > job_max_events * 0.9 and job_events + n_events < job_max_events*1.1:
             input_paths.append(input_path)
             chunks.append(input_paths)
             job_events = 0
@@ -96,7 +96,8 @@ def construct_fwliteOutput_cfi(
 
 def construct_fwlite_cfi(
         dataset_cfi,
-        max_events=8640000
+        job_max_events=8640000,
+        **kwargs
 ):
     """ Since on average the new framework processes ~ 100ev/s then per day
     it would process ~8 640 000 events, giving some buffer for the 2 day max
@@ -111,7 +112,7 @@ def construct_fwlite_cfi(
     """
     fwliteInput_cfis = chunk_fwliteInput_fileNames(
                                                 dataset_cfi['dataset_files'],
-                                                max_events)
+                                                job_max_events)
     fwliteOutput_cfis = construct_fwliteOutput_cfi(
                                                 len(fwliteInput_cfis),
                                                 dataset_cfi['sample_name'])
@@ -167,6 +168,7 @@ def write_cfg_file(
         is_mc=True,
         **kwargs
 ):
+    os.makedirs(output_dir, exist_ok=True)
     dataset_cfi = read_json(dataset_cfi_path)
     dataset_cfg = collect_prodNtuple_entries(
             dataset_cfi=dataset_cfi,
@@ -174,8 +176,11 @@ def write_cfg_file(
             era=era,
             channel=channel
     )
-    fwliteIn_cfis, fwliteOut_cfis = construct_fwlite_cfi(dataset_cfi)
+    output_paths = []
+    fwliteIn_cfis, fwliteOut_cfis = construct_fwlite_cfi(dataset_cfi, **kwargs)
     for i, (in_cfi, out_cfi) in enumerate(zip(fwliteIn_cfis, fwliteOut_cfis)):
         sample_name = dataset_cfi['sample_name']
         output_path = os.path.join(output_dir, f'{sample_name}_tree_{i}_cfg.py')
         fill_template(dataset_cfg, in_cfi, out_cfi, output_path, **kwargs)
+        output_paths.append(output_path)
+    return output_paths

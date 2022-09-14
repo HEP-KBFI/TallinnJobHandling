@@ -37,7 +37,7 @@ process = cms.PSet()
 
 process.fwliteInput = cms.PSet(
     fileNames = cms.vstring([
-        {% for dataset_file in fwliteInput %}"{{ dataset_file }}"
+        {% for dataset_file in fwliteInput %}"{{ dataset_file }}"{{ "," if not loop.last else "" }}
         {% endfor %}
     ]),
     skipEvents = cms.int32({{ skipEvents }}),
@@ -56,6 +56,7 @@ process.produceNtuple = cms.PSet(
         {% for ls in lumiScale %}cms.PSet(
             central_or_shift = cms.string("{{ ls.central_or_shift }}"),
             lumi = cms.double({{ ls.lumi }})
+        ){{ "," if not loop.last else "" }}
         {% endfor %}
     ]),
     ref_genWeight = cms.double({{ ref_genWeight }}),
@@ -86,7 +87,7 @@ process.produceNtuple = cms.PSet(
         saveAllMembers = cms.bool({{ pdfSettings.saveAllMembers }})
     ),
     apply_DYMCNormScaleFactors = cms.bool({{ apply_DYMCNormScaleFactors }}),
-    fatJet_corrections = cms.vstring({{ fatJet_corrections|join(', ') }}),
+    fatJet_corrections = cms.vstring({% for corr in fatJet_corrections %} "{{ corr }}"{{ "," if not loop.last else "" }} {% endfor %}),
     treeName = cms.string("{{ treeName }}"),
     hadTauWP_againstJets_fakeable = cms.string("{{ hadTauWP_againstJets_fakeable }}"),
     hadTauWP_againstElectrons = cms.string("{{ hadTauWP_againstElectrons }}"),
@@ -96,14 +97,14 @@ process.produceNtuple = cms.PSet(
             absEtaBins = cms.vdouble({{ hadTauFakeRateWeight.lead.absEtaBins|join(', ') }}),
             graphName = cms.string("{{ hadTauFakeRateWeight.lead.graphName }}"),
             applyGraph = cms.bool({{ hadTauFakeRateWeight.lead.applyGraph }}),
-            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.lead.fitfunctionName }}"),
+            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.lead.fitFunctionName }}"),
             applyFitFunction = cms.bool({{ hadTauFakeRateWeight.lead.applyFitFunction }})
         ),
         sublead = cms.PSet(
             absEtaBins = cms.vdouble({{ hadTauFakeRateWeight.sublead.absEtaBins|join(', ') }}),
             graphName = cms.string("{{ hadTauFakeRateWeight.sublead.graphName }}"),
             applyGraph = cms.bool({{ hadTauFakeRateWeight.sublead.applyGraph }}),
-            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.sublead.fitfunctionName }}"),
+            fitFunctionName = cms.string("{{ hadTauFakeRateWeight.sublead.fitFunctionName }}"),
             applyFitFunction = cms.bool({{ hadTauFakeRateWeight.sublead.applyFitFunction }})
         ),
         inputFileName = cms.string("{{ hadTauFakeRateWeight.inputFileName }}")
@@ -154,12 +155,11 @@ process.produceNtuple = cms.PSet(
     apply_chargeMisIdRate = cms.bool({{ apply_chargeMisIdRate }}),
     selection = cms.string("{{ selection }}"),
     writerPlugins = cms.VPSet(
-        {% for plugin in writerPlugins %}{{ plugin }}
-        {% endfor %}
+        {{ writerPlugins|join(',\n        ') }}
     )
 )
 
-writers_triggerInfo.PD = cms.string(" {{ writers_triggerInfo.PD }}")
+writers_triggerInfo.PD = cms.string("{{ writers_triggerInfo.PD }}")
 writers_metFilters.flags = {{ writers_metFilters.flags }}
 writers_genPhotonFilter.apply_genPhotonFilter = cms.string("{{ writers_genPhotonFilter.apply_genPhotonFilter }}")
 process.produceNtuple.triggers = {{ triggers.config }}
