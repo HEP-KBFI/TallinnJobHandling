@@ -5,10 +5,19 @@ import cataloging
 
 __location__ = os.path.dirname(__file__)
 JINJA_TEMPLATE_PATH = os.path.join(__location__, '.cfg_template.jinja2')
-# JINJA_TEMPLATE_PATH = '.cfg_template.jinja2'
 
 
 def read_json(path):
+    """ A simple helper function for reading JSON files
+
+    Args:
+        path : str
+            Path to the JSON file
+
+    Returns:
+        entries : dict or list
+            The info stored in the JSON file
+    """
     with open(path, 'rt') as in_file:
         entries = json.load(in_file)
     return entries
@@ -20,6 +29,25 @@ def collect_prodNtuple_entries(
         era='2018',
         channel='2lss_leq1tau'
 ):
+    """ Loads all the necessary partial config files
+
+    Args:
+        dataset_cfi : dict
+            The full config of the dataset
+        analysis: str
+            Name of the analysis the configs will be loaded
+            [default: 'HH/multilepton']
+        era : str
+            Era for which the configs will be loaded [default: 2018]
+        channel : str
+            Name of the channel for which the configs will be loaded
+            [default: '2lss_leq1tau']
+
+    Returns:
+        dataset_cfi : dict
+            The fuller config based on which the configuration file will be
+            created
+    """
     base_dir = os.path.join(cataloging.__path__[0], 'analyses')
     overall_cfi_path = os.path.join(base_dir, 'prodntuple_cfi.json')
     analysis_cfi_path = os.path.join(base_dir, analysis, 'prodntuple_cfi.json')
@@ -125,7 +153,7 @@ def fill_template(
         out_cfi,
         output_path,
         skipEvents=0,
-        maxEvents=8640000,
+        maxEvents=-1,
         outputEvery=10000,
         is_mc=True
 ):
@@ -168,6 +196,29 @@ def write_cfg_file(
         is_mc=True,
         **kwargs
 ):
+    """ Fills all the config files and returns the paths of the config files
+    written
+
+    Args:
+        output_dir : str
+            Path to the directory where the config files will be written
+        dataset_cfi_path : str
+            Path to the config file of a given dataset.
+        analysis : str
+            Name of the analysis for which the configs will be loaded.
+        era : str
+            Era for which the configs will be loaded.
+        channel: str
+            Channel for which the configs will be loaded.
+        is_mc : bool
+            Whether the dataset [default: True]
+        **kwargs
+
+    Returns:
+        output_paths : list of strings
+            List of the paths of the config files
+    """
+
     os.makedirs(output_dir, exist_ok=True)
     dataset_cfi = read_json(dataset_cfi_path)
     dataset_cfg = collect_prodNtuple_entries(
