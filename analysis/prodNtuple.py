@@ -175,7 +175,6 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
 
     def gethash(self):
         return 'ProdTallinnNTuples'+ str(law.util.create_hash(self.jobList, to_int=True)) + '_'+ self.version
-        # return 'ProdTallinnNTuples'+ str(law.util.create_hash(self.jobDicts, to_int=True)) + '_'+ self.version
 
     @law.cached_workflow_property
     def workDir(self):
