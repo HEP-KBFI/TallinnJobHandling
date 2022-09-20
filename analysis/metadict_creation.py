@@ -41,8 +41,8 @@ def get_sample_name(dbs_name):
     return "_".join(elements_of_interest)
 
 
-class MetaDictFractionCreator(KBFIBaseTask, law.LocalWorkflow):
-# class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+#class MetaDictFractionCreator(KBFIBaseTask, law.LocalWorkflow):
+class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_DATA_PATH"
     cms_local_dir = '/hdfs/cms/store'
 
@@ -102,8 +102,8 @@ class MetaDictFractionCreator(KBFIBaseTask, law.LocalWorkflow):
             json.dump(md_creator.metadict, out_file, indent=4)
 
 
-# class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
+class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+#class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_DATA_PATH"
     cms_local_dir = '/hdfs/cms/store'
 
@@ -125,6 +125,7 @@ class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
                 cataloging.__path__[0], 'analyses', self.analysis, self.era)
         datasets_wcp = os.path.join(analysis_dir, 'datasets*.txt')
         dataset_files = [os.path.basename(path) for path in glob.glob(datasets_wcp)]
+        print(dataset_files, cataloging.__path__[0])
         return dataset_files
 
     def create_branch_map(self):
@@ -141,13 +142,13 @@ class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
         for dataset_file in self.jobList:
             yield MetaDictFractionCreator(
                     analysis=self.analysis, era=self.era,
-                    datasets_file=dataset_file, version=self.version)
+                    datasets_file=dataset_file, version=self.version, workflow="local")
 
     def workflow_requires(self):
         return {
                 dataset_file: MetaDictFractionCreator.req(
                     self, analysis=self.analysis, era=self.era,
-                    datasets_file=dataset_file) for dataset_file in self.jobList
+                    datasets_file=dataset_file, workflow="local",_prefer_cli=["workflow"]) for dataset_file in self.jobList
             }
 
     def output(self):

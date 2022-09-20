@@ -169,7 +169,11 @@ def fill_template(
     """
     if not region == '':
         full_selection = dataset_cfg['selection_fragments']['base']
-        full_selection.extend(
+        if region not in dataset_cfg['selection_fragments'].keys():
+            full_selection.extend([region])
+            print("WARNING: region not implemented, interpreting as selction string!")
+        else:
+            full_selection.extend(
                 dataset_cfg['selection_fragments'][region])
     else:
         full_selection = dataset_cfg['selection_fragments']['base']
@@ -177,7 +181,7 @@ def fill_template(
         'fwliteInput': in_cfi,
         'fwliteOutput': out_cfi,
         'skipEvents': skipEvents,
-        'maxEvents': 10,
+        'maxEvents': 1000,
         # 'maxEvents': maxEvents,
         'outputEvery': outputEvery,
         'writers_triggerInfo': {

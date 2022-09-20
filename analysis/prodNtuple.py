@@ -12,7 +12,7 @@ from analysis.utils.construct_cfg import chunk_fwliteInput_fileNames
 from analysis.framework import SlurmWorkflow
 from analysis.metadict_creation import MetaDictFractionCreator
 from cataloging.tools.general import nth_parent_directory as pardir
-
+import traceback
 
 """
  Task to create the configs for running TallinnNtuple jobs.
@@ -29,13 +29,13 @@ def assign_folder_name(datasets_file):
         name = 'Misc'
     return name
 
-# class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
+class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+#class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
-        default='hh-multilepton',
+        default='HH/multilepton',
         significant=False,
-        description="analysis e.g. hh-multilepton",
+        description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
@@ -57,9 +57,9 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
     )
 
     region = luigi.Parameter(
-        default='SS_SR',
+        default='',
         significant=False,
-        description="region e.g. ''",
+        description="region e.g. 'SS_SR' or selection string",
     )
 
     tmp_root_output = luigi.Parameter(
@@ -92,13 +92,13 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
         for dataset_file in self.jobList:
             yield MetaDictFractionCreator(
                     analysis=self.analysis, era=self.era,
-                    datasets_file=dataset_file, version=self.version)
+                    datasets_file=dataset_file, version=self.version, workflow="local")
 
     def workflow_requires(self):
         return {
                 dataset_file: MetaDictFractionCreator.req(
                     self, analysis=self.analysis, era=self.era,
-                    datasets_file=dataset_file) for dataset_file in self.jobList
+                    datasets_file=dataset_file, workflow="local",_prefer_cli=["workflow"]) for dataset_file in self.jobList
             }
 
     def output(self):
@@ -126,8 +126,8 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
                 out_file.write(cfg_path + '\n')
 
 
-class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
-# class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+#class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
+class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     NTUPLE_FINAL_STORE = "/hdfs/local/"
 
@@ -159,9 +159,9 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
     )
 
     region = luigi.Parameter(
-        default='SS_SR',
+        default='',
         significant=False,
-        description="region e.g. ''",
+        description="region e.g. 'SS_SR' or selection string",
     )
 
     mode = luigi.Parameter(
@@ -234,7 +234,7 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
             logFileList = glob.glob(cleanDir)
             for f in logFileList:
                 os.remove(f)
-        return super(ProdTallinnNTuples, self).on_success()
+        #return super(ProdTallinnNTuples, self).on_success()
 
     def on_failure(self, exception):
         if self.is_workflow():
@@ -256,7 +256,9 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
                     "Encountered error, preserving logfiles",
                     "(Manual deletion required): ",
                     self.cleanDir)
-        return super(ProdTallinnNTuples, self).on_failure(exception)
+        traceback_string = traceback.format_exc()
+        return "Runtime error:\n%s" % traceback_string
+        #return super(ProdTallinnNTuples, self).on_failure(exception)
 
     def output(self):
         tree_name = os.path.basename(self.branch_data).replace('_cfg.py', '.root')
@@ -314,13 +316,13 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
         description="mode e.g. default",
     )
 
-    selection = luigi.Parameter(
+    region = luigi.Parameter(
         default='',
         significant=False,
-        description="selection e.g. ''",
+        description="region e.g. 'SS_SR' or selection string",
     )
 
-    region = luigi.Parameter(
+    analysis_region = luigi.Parameter(
         default='OS_SR',
         significant=True,
         description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
@@ -342,7 +344,7 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
         if not self.withSyst:
             to_run=['central']
         for branch, branchdata in ntuples:
-            branches[branch]=[branchdata.path,self.region]
+            branches[branch]=[branchdata.path,self.analysis_region]
         outbranches={}
         for e, en in enumerate(to_run):
             for key in branches:
@@ -365,15 +367,15 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
         if self.channel == '2lss_leq1tau':
             template = template.replace('CHANNELINPUTS','from TallinnAnalysis.HistogramTools.datacard_HH_2lss_cfi import datacard_HH_2lss_nonresonant as histograms_datacard_HH_2lss_nonresonant, datacard_HH_2lss_resonant_spin0 as histograms_datacard_HH_2lss_resonant_spin0, datacard_HH_2lss_resonant_spin2 as histograms_datacard_HH_2lss_resonant_spin2')
             sel = ''
-            basesel = 'nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25.  && lep1_tightCharge >= 2 && lep2_pt > 15.  && lep2_tightCharge >= 2  && tau1_pt > 20. && tau1_isTight && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters && lep2_isTight'
+            basesel = 'nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25.  && lep1_tightCharge >= 2 && lep2_pt > 15.  && lep2_tightCharge >= 2  && tau1_pt > 20. && tau1_isTight && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters'
             if prms[1] == 'OS_SR':
-                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep1_charge*lep2_charge < 0"
+                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep2_isTight &&lep1_charge*lep2_charge < 0"
             elif prms[1] == 'SS_SR':
-                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep1_charge*lep2_charge > 0"
+                sel = basesel + "&& ntightlep == 2 && ntighttau == 1 && lep1_isTight && lep2_isTight && lep1_charge*lep2_charge > 0"
             elif prms[1] == 'OS_Fakable':
-                sel = basesel + "lep1_isFakeable && lep2_isFakebale && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge < 0"
+                sel = basesel + "&& lep1_isFakeable && lep2_isFakeable && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge < 0"
             elif prms[1] == 'SS_Fakable':
-                sel = basesel + "lep1_isFakeable && lep2_isFakebale && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge > 0"
+                sel = basesel + "&& lep1_isFakeable && lep2_isFakeable && tau1_isFakeable && !(lep1_isTight && lep2_isTight && tau1_isTight) &&ntightlep <= 2 && ntighttau <= 1 && lep1_charge*lep2_charge > 0"
             template = template.replace('SELECTION', sel)
             template = template.replace('HISTPLUGINS','histograms_datacard_HH_2lss_nonresonant')
         else:
@@ -423,13 +425,13 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
         description="mode e.g. default",
     )
 
-    selection = luigi.Parameter(
+    region = luigi.Parameter(
         default='',
         significant=False,
-        description="selection e.g. ''",
+        description="region e.g. 'SS_SR' or selection string",
     )
 
-    region = luigi.Parameter(
+    analysis_region = luigi.Parameter(
         default='OS_SR',
         significant=True,
         description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
@@ -442,7 +444,7 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
     )
 
     def gethash(self):
-        return 'ProdTallinnAnalysisHistosForRegion'+ str(law.util.create_hash(str(self.withSyst)  + self.region + self.channel + self.selection + self.mode + self.analysis + self.era, to_int=True)) + '_'+ self.version
+        return 'ProdTallinnAnalysisHistosForRegion'+ str(law.util.create_hash(str(self.withSyst)  + self.analysis_region + self.channel + self.region + self.mode + self.analysis + self.era, to_int=True)) + '_'+ self.version
 
     @law.cached_workflow_property
     def workDir(self):
@@ -458,39 +460,45 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
         return branches
 
     def workflow_requires(self):
-        return {'configs':TallinnAnalyzeConfigsForRegion.req(self,workflow='local',_prefer_cli=["workflow", "version","mode","selection"])}
+        return {'configs':TallinnAnalyzeConfigsForRegion.req(self,workflow='local',_prefer_cli=["workflow", "version","mode","region"])}
 
     def on_success(self):
         if self.is_workflow():
-            os.rmdir(self.workDir.path)
+            shutil.rmtree(self.workDir.path)
+            #os.rmdir(self.workDir.path)
             cleanDir = (os.path.expandvars("${ANALYSIS_LOGFILE_PATH}")+'/' +self.gethash()+'*.txt').strip(' ')
             logFileList = glob.glob(cleanDir)
             for f in logFileList:
                 os.remove(f)
-        return super(ProdTallinnNTuples, self).on_success()
+        #return super(ProdTallinnNTuples, self).on_success()
 
     def on_failure(self, exception):
         if self.is_workflow():
             cleanDir = (os.path.expandvars("${ANALYSIS_LOGFILE_PATH}")+'/' +self.task.gethash()+'*.txt').strip(' ')
             if not self.debug:
-                os.rmdir(self.workDir.path)
+                shutil.rmtree(self.workDir.path)
+                #os.rmdir(self.workDir.path)
                 logFileList = glob.glob(cleanDir)
                 for f in logFileList:
                     os.remove(f)
             else:
                 print("Encountered error, preserving workdir (to be deleted manually) ", self.workDir.path)
                 print("Encountered error, preserving logfiles (to be deleted manually) ", cleanDir)
-        return super(ProdTallinnNTuples, self).on_failure(exception)
+        traceback_string = traceback.format_exc()
+        return "Runtime error:\n%s" % traceback_string
+        #return super(ProdTallinnNTuples, self).on_failure(exception)
 
-    def output(self):
-        return self.local_target(self.branch_data.split('/')[-1].strip('config_analyze_').replace('.py','.root'))
+    def output(self):\
+        return self.local_target(self.branch_data.split('/')[-1][len('config_analyze_'):].replace('.py','.root'))
 
     def build_command(self):
         cdCMD = 'cd '+ self.workDir.path
         outFileName = self.output().path.split('/')[-1]
         outDirName = self.output().path.strip(outFileName)
-        mvCMD ="mv "+ outFileName + " " + outDirName
-        mvCM2 ="mv "+ 'rle_'+ outFileName.strip('.root')+'.txt' + " " + outDirName
+        mvCMD = "mv *.root " + outFileName + " && mv " + outFileName + " " + outDirName 
+        mvCMD2 = "mv *.json " + "rle_" + outFileName.replace('.root','.json') + " && mv " + "rle_" + outFileName.replace('root', 'json') + " " + outDirName
+        #mvCMD ="mv "+ outFileName + " " + outDirName + "/" + outFileNameTarget
+        #mvCMD2 ="mv "+ outFileNameJSON + " " + outDirName + "/rle_" + outFileNameTarget.replace('.root','.json')
         cmd = cdCMD + ' && ' + 'analyze '+ str(self.branch_data) + ' && ' + mvCMD  + ' && ' + mvCMD2
         return cmd
 
@@ -525,10 +533,10 @@ class ProdTallinnAnalysisHistos(law.WrapperTask):
         description="mode e.g. default",
     )
 
-    selection = luigi.Parameter(
+    region = luigi.Parameter(
         default='',
         significant=False,
-        description="selection e.g. ''",
+        description="region e.g. 'SS_SR' or selection string",
     )
 
     version = luigi.Parameter(
@@ -550,7 +558,7 @@ class ProdTallinnAnalysisHistos(law.WrapperTask):
     )
 
     def requires(self):
-        yield ProdTallinnAnalysisHistosForRegion(region='OS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
-        yield ProdTallinnAnalysisHistosForRegion(region='SS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
-        yield ProdTallinnAnalysisHistosForRegion(region='OS_Fakable', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
-        yield ProdTallinnAnalysisHistosForRegion(region='SS_Fakable',  version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, selection=self.selection, withSyst=self.withSyst, workflow=self.workflow)
+        yield ProdTallinnAnalysisHistosForRegion(analysis_region='OS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, region=self.region, withSyst=self.withSyst, workflow=self.workflow)
+        yield ProdTallinnAnalysisHistosForRegion(analysis_region='SS_SR', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, region=self.region, withSyst=self.withSyst, workflow=self.workflow)
+        yield ProdTallinnAnalysisHistosForRegion(analysis_region='OS_Fakable', version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, region=self.region, withSyst=self.withSyst, workflow=self.workflow)
+        yield ProdTallinnAnalysisHistosForRegion(analysis_region='SS_Fakable',  version=self.version, analysis=self.analysis, era=self.era, channel=self.channel, mode=self.mode, region=self.region, withSyst=self.withSyst, workflow=self.workflow)
