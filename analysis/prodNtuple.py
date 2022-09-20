@@ -13,6 +13,7 @@ from analysis.framework import SlurmWorkflow
 from analysis.metadict_creation import MetaDictFractionCreator
 from cataloging.tools.general import nth_parent_directory as pardir
 
+
 """
  Task to create the configs for running TallinnNtuple jobs.
 This is later to be done with the file catalog
@@ -55,10 +56,10 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
         description="mode e.g. default",
     )
 
-    selection = luigi.Parameter(
-        default='',
+    region = luigi.Parameter(
+        default='SS_SR',
         significant=False,
-        description="selection e.g. ''",
+        description="region e.g. ''",
     )
 
     tmp_root_output = luigi.Parameter(
@@ -116,7 +117,8 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
                     self.analysis,
                     self.era,
                     self.channel,
-                    is_mc=True  # This needs to be done differently
+                    is_mc=True, # This needs to be done differently
+                    region=self.region
             )
             all_outputs.extend(output_paths)
         with open(self.output().path, 'wt') as out_file:
@@ -133,21 +135,21 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
         super(ProdTallinnNTuples, self).__init__(*args, **kwargs)
 
     analysis = luigi.Parameter(
-        default='hh-multilepton',
+        default='HH/multilepton',
         significant=False,
-        description="analysis e.g. hh-multilepton",
+        description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
-        default='2lss',
+        default='2lss_leq1tau',
         significant=False,
-        description="channel e.g. 2;ss",
+        description="channel e.g. 2lss_leq1tau",
     )
 
     mode = luigi.Parameter(
@@ -156,10 +158,10 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
         description="mode e.g. default",
     )
 
-    selection = luigi.Parameter(
-        default='',
+    region = luigi.Parameter(
+        default='SS_SR',
         significant=False,
-        description="selection e.g. ''",
+        description="region e.g. ''",
     )
 
     mode = luigi.Parameter(
@@ -206,15 +208,21 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
             'configs': CreateTallinnNtupleConfigs.req(
                 self, workflow="local",
                 _prefer_cli=[
-                    "workflow", "version", "mode", "selection"
+                    "workflow", "version", "mode", "region"
                 ],
-                analysis=self.analysis, era=self.era, version=self.version
+                analysis=self.analysis,
+                era=self.era,
+                version=self.version,
+                region=self.region
             )
         }
 
     def requires(self):
         yield CreateTallinnNtupleConfigs(
-                analysis=self.analysis, era=self.era, version=self.version)
+                analysis=self.analysis,
+                era=self.era,
+                version=self.version,
+                region=self.region)
 
     def on_success(self):
         if self.is_workflow():
@@ -258,7 +266,7 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
             self.analysis,
             self.era)
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"{sample_name}_{tree_name}")
+        output_path = os.path.join(output_dir, f"{tree_name}")
         os.makedirs(output_dir, exist_ok=True)
         return self.local_target(output_path)
 
@@ -275,6 +283,7 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
         cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
         return cmd
 
+
 """
  Task to create the configs for running TallinnNtuple jobs.
 This is later to be done with the file catalog
@@ -282,21 +291,21 @@ This is later to be done with the file catalog
 class CreateTallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
-        default='hh-multilepton',
+        default='HH/multilepton',
         significant=False,
         description="analysis e.g. hh-multilepton",
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
-        default='2lss',
+        default='2lss_leq1tau',
         significant=False,
-        description="channel e.g. 2;ss",
+        description="channel e.g. 2lss_leq1tau",
     )
 
     mode = luigi.Parameter(
@@ -390,21 +399,21 @@ This is later to be done with the file catalog
 class CreateTallinnAnalyzeConfigs(law.WrapperTask):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
-        default='hh-multilepton',
+        default='HH/multilepton',
         significant=False,
-        description="analysis e.g. hh-multilepton",
+        description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
-        default='2lss',
+        default='2lss_leq1tau',
         significant=False,
-        description="channel e.g. 2lss",
+        description="channel e.g. 2lss_leq1tau",
     )
 
     mode = luigi.Parameter(

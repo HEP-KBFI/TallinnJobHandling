@@ -152,6 +152,7 @@ def fill_template(
         in_cfi,
         out_cfi,
         output_path,
+        region,
         skipEvents=0,
         maxEvents=-1,
         outputEvery=10000,
@@ -166,18 +167,26 @@ def fill_template(
         maxEvents : int
             Maximum number of events to process
     """
+    if not region == '':
+        full_selection = dataset_cfg['selection_fragments']['base']
+        full_selection.extend(
+                dataset_cfg['selection_fragments'][region])
+    else:
+        full_selection = dataset_cfg['selection_fragments']['base']
     full_info = {
         'fwliteInput': in_cfi,
         'fwliteOutput': out_cfi,
         'skipEvents': skipEvents,
-        'maxEvents': maxEvents,
+        'maxEvents': 10,
+        # 'maxEvents': maxEvents,
         'outputEvery': outputEvery,
         'writers_triggerInfo': {
             'PD': 'MC'
         },
         'writers_genPhotonFilter': {
             "apply_genPhotonFilter": 'disabled'
-        }
+        },
+        'selection': ' && '.join(full_selection)
     }
     with open(JINJA_TEMPLATE_PATH, 'rt') as in_file:
         template = in_file.read()
@@ -194,6 +203,7 @@ def write_cfg_file(
         era,
         channel,
         is_mc=True,
+        region='SS_SR',
         **kwargs
 ):
     """ Fills all the config files and returns the paths of the config files
@@ -232,6 +242,6 @@ def write_cfg_file(
     for i, (in_cfi, out_cfi) in enumerate(zip(fwliteIn_cfis, fwliteOut_cfis)):
         sample_name = dataset_cfi['sample_name']
         output_path = os.path.join(output_dir, f'{sample_name}_tree_{i}_cfg.py')
-        fill_template(dataset_cfg, in_cfi, out_cfi, output_path, **kwargs)
+        fill_template(dataset_cfg, in_cfi, out_cfi, output_path, region, **kwargs)
         output_paths.append(output_path)
     return output_paths
