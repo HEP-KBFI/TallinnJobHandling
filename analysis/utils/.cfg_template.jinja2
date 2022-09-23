@@ -36,9 +36,8 @@ from TallinnNtupleProducer.Writers.ZbosonMassVetoWriter_cfi import ZbosonMassVet
 process = cms.PSet()
 
 process.fwliteInput = cms.PSet(
-    fileNames = cms.vstring([
-        {% for dataset_file in fwliteInput %}"{{ dataset_file }}"{{ "," if not loop.last else "" }}
-        {% endfor %}
+    fileNames = cms.vstring([{% for dataset_file in fwliteInput %}
+        "{{ dataset_file }}"{{ "," if not loop.last else "" }}{% endfor %}
     ]),
     skipEvents = cms.int32({{ skipEvents }}),
     maxEvents = cms.int32({{ maxEvents }}),
@@ -52,12 +51,11 @@ process.fwliteOutput = cms.PSet(
 process.produceNtuple = cms.PSet(
     process = cms.string("{{ process }}"),
     era = cms.string("{{ era }}"),
-    lumiScale = cms.VPSet([
-        {% for ls in lumiScale %}cms.PSet(
-            central_or_shift = cms.string("{{ ls.central_or_shift }}"),
-            lumi = cms.double({{ ls.lumi }})
-        ){{ "," if not loop.last else "" }}
-        {% endfor %}
+    lumiScale = cms.VPSet([{% for shift, value in lumiScale.items() %}
+        cms.PSet(
+            central_or_shift = cms.string("{{ shift }}"),
+            lumi = cms.double({{ "%.20f" | format(value) }})
+        ){{ "," if not loop.last else "" }}{% endfor %}
     ]),
     ref_genWeight = cms.double({{ ref_genWeight }}),
     apply_genWeight = cms.bool({{ apply_genWeight }}),

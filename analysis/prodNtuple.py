@@ -30,7 +30,7 @@ def assign_folder_name(datasets_file):
     return name
 
 class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-#class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
+# class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
         default='HH/multilepton',
@@ -39,9 +39,9 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
@@ -126,7 +126,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
                 out_file.write(cfg_path + '\n')
 
 
-#class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
+# class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
 class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     NTUPLE_FINAL_STORE = "/hdfs/local/"
@@ -299,9 +299,9 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
@@ -408,9 +408,9 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
@@ -516,9 +516,9 @@ class ProdTallinnAnalysisHistos(law.WrapperTask):
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(

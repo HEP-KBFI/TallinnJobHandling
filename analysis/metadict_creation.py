@@ -41,7 +41,7 @@ def get_sample_name(dbs_name):
     return "_".join(elements_of_interest)
 
 
-#class MetaDictFractionCreator(KBFIBaseTask, law.LocalWorkflow):
+# class MetaDictFractionCreator(KBFIBaseTask, law.LocalWorkflow):
 class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_DATA_PATH"
     cms_local_dir = '/hdfs/cms/store'
@@ -53,9 +53,9 @@ class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     datasets_file = luigi.Parameter(
@@ -102,8 +102,8 @@ class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
             json.dump(md_creator.metadict, out_file, indent=4)
 
 
+# class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
 class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-#class MetaDictCreator(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_DATA_PATH"
     cms_local_dir = '/hdfs/cms/store'
 
@@ -114,9 +114,9 @@ class MetaDictCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     )
 
     era = luigi.Parameter(
-        default='2017',
+        default='2018',
         significant=False,
-        description="era e.g. 2017",
+        description="era e.g. 2018",
     )
 
     @law.cached_workflow_property

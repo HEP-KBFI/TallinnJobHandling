@@ -6,6 +6,12 @@ import cataloging
 __location__ = os.path.dirname(__file__)
 JINJA_TEMPLATE_PATH = os.path.join(__location__, '.cfg_template.jinja2')
 
+ERA_LUMI = {
+    "2016": 36.31,
+    "2017": 41.48,
+    "2018": 59.83
+}
+
 
 def read_json(path):
     """ A simple helper function for reading JSON files
@@ -91,11 +97,11 @@ def chunk_fwliteInput_fileNames(dataset_cfi, job_max_events):
     dataset_files = dataset_cfi
     input_paths = []
     job_events = 0
-    for input_path, n_events in dataset_files.items():
+    for input_path, info in dataset_files.items():
         if job_events < 0.9*job_max_events:
-            job_events += n_events
+            job_events += info['num_entries']
             input_paths.append(input_path)
-        elif job_events > job_max_events * 0.9 and job_events + n_events < job_max_events*1.1:
+        elif job_events > job_max_events * 0.9 and job_events + info['num_entries'] < job_max_events*1.1:
             input_paths.append(input_path)
             chunks.append(input_paths)
             job_events = 0
@@ -122,6 +128,24 @@ def construct_fwliteOutput_cfi(
     return output_files
 
 
+def construct_lumiscales(dataset_info, input_file_chunks):
+    lumiscales = []
+    dataset_info
+    for chunk in input_file_chunks:
+        lumiscale = {}
+        for input_file in chunk:
+            for shift_name, value in dataset_info['dataset_files'][input_file].items():
+                if shift_name == 'num_entries':
+                    continue
+                if shift_name not in lumiscale.keys():
+                    lumiscale[shift_name] = 0
+                lumiscale[shift_name] += value
+        for shift_name, value in lumiscale.items():
+            lumiscale[shift_name] = float((ERA_LUMI[dataset_info['prodNtuple_cfi']['era']]* 1000* dataset_info['xs']) / lumiscale[shift_name])
+        lumiscales.append(lumiscale)
+    return lumiscales
+
+
 def construct_fwlite_cfi(
         dataset_cfi,
         job_max_events=8640000,
@@ -138,19 +162,21 @@ def construct_fwlite_cfi(
             Number of maximum events to be processed within one job. Actual max
             events to be processed is +- 10% of the given number.
     """
-    fwliteInput_cfis = chunk_fwliteInput_fileNames(
+    input_file_chunks = chunk_fwliteInput_fileNames(
                                                 dataset_cfi['dataset_files'],
                                                 job_max_events)
-    fwliteOutput_cfis = construct_fwliteOutput_cfi(
-                                                len(fwliteInput_cfis),
+    lumiscales = construct_lumiscales(dataset_cfi, input_file_chunks)
+    output_files = construct_fwliteOutput_cfi(
+                                                len(input_file_chunks),
                                                 dataset_cfi['sample_name'])
-    return fwliteInput_cfis, fwliteOutput_cfis
+    return input_file_chunks, output_files, lumiscales
 
 
 def fill_template(
         dataset_cfg,
         in_cfi,
         out_cfi,
+        ls,
         output_path,
         region,
         skipEvents=0,
@@ -181,6 +207,7 @@ def fill_template(
         'fwliteInput': in_cfi,
         'fwliteOutput': out_cfi,
         'skipEvents': skipEvents,
+        'lumiScale': ls,
         'maxEvents': 1000,
         # 'maxEvents': maxEvents,
         'outputEvery': outputEvery,
@@ -242,10 +269,10 @@ def write_cfg_file(
             channel=channel
     )
     output_paths = []
-    fwliteIn_cfis, fwliteOut_cfis = construct_fwlite_cfi(dataset_cfi, **kwargs)
-    for i, (in_cfi, out_cfi) in enumerate(zip(fwliteIn_cfis, fwliteOut_cfis)):
+    fwliteIn_cfis, fwliteOut_cfis, lumiscales = construct_fwlite_cfi(dataset_cfi, **kwargs)
+    for i, (in_cfi, out_cfi, ls) in enumerate(zip(fwliteIn_cfis, fwliteOut_cfis, lumiscales)):
         sample_name = dataset_cfi['sample_name']
         output_path = os.path.join(output_dir, f'{sample_name}_tree_{i}_cfg.py')
-        fill_template(dataset_cfg, in_cfi, out_cfi, output_path, region, **kwargs)
+        fill_template(dataset_cfg, in_cfi, out_cfi, ls, output_path, region, **kwargs)
         output_paths.append(output_path)
     return output_paths
