@@ -194,7 +194,7 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
         configs_path = list(input_odict)[0]
         with open(configs_path.path, 'rt') as in_file:
             config_paths = [line.strip('\n') for line in in_file]
-        return config_paths[:2]
+        return config_paths
 
 
     def create_branch_map(self):
@@ -441,6 +441,12 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
         default=True,
         significant=False,
         description="with or without systematics"
+    )
+
+    debug = luigi.BoolParameter(
+        default=False,
+        significant=False,
+        description='Whether keep the temporary files'
     )
 
     def gethash(self):

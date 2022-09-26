@@ -43,7 +43,7 @@ class Task(law.Task):
 class SlurmWorkflowProxy(law.slurm.SlurmWorkflowProxy):
     def create_job_file(self, job_num, branches):
         out = super(SlurmWorkflowProxy, self).create_job_file(job_num, branches)
-        out['log'] =  os.path.expandvars("$ANALYSIS_LOGFILE_PATH")+'/' +self.task.gethash() +out['log'].split('/')[-1]
+        out['abs_log_file'] =  os.path.expandvars("$ANALYSIS_LOGFILE_PATH")+'/' +self.task.gethash() +out['log'].split('/')[-1]
         return out
 
 class SlurmWorkflow(law.slurm.SlurmWorkflow):
@@ -106,7 +106,7 @@ class SlurmWorkflow(law.slurm.SlurmWorkflow):
                             lasterror = int(l[l.find('exit code :')+len('exit code :'):])
                         else:
                             lasterror = ''
-                        if lasterror == 21 or lasterror == 23 or lasterror: # cvms or bus
+                        if lasterror == 21 or lasterror == 23: # cvms or bus
                             print('backlisting node!')
                             if taskRef.slurm_blacklist_nodes:
                                 if lasthost not in taskRef.slurm_blacklist_nodes:
