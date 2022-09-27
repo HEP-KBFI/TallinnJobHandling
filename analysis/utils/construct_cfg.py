@@ -13,6 +13,11 @@ ERA_LUMI = {
 }
 
 
+def translateProcessname(name):
+    if 'GluGluToHHTo4V' in name: return 'GluGluToHHTo4V'
+    if 'TTTo2L2Nu' in name: return 'TT'
+    return 'Other'
+
 def read_json(path):
     """ A simple helper function for reading JSON files
 

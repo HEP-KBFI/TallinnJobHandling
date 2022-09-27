@@ -135,7 +135,6 @@ class SlurmWorkflow(law.slurm.SlurmWorkflow):
         )
         config.custom_content.append(("time", job_time))
         config.custom_content.append(("nodes", 1))
-        print(config)
         if self.slurm_blacklist_nodes:
             config.custom_content.append(("exclude", self.slurm_blacklist_nodes))
 

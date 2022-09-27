@@ -10,6 +10,7 @@ from analysis.tasks import KBFIBaseTask, CommandTask
 from analysis.utils.construct_cfg import write_cfg_file
 from analysis.utils.construct_cfg import read_json
 from analysis.utils.construct_cfg import chunk_fwliteInput_fileNames
+from analysis.utils.construct_cfg import translateProcessname
 from analysis.framework import SlurmWorkflow
 from analysis.metadict_creation import MetaDictFractionCreator
 from cataloging.tools.general import nth_parent_directory as pardir
@@ -30,24 +31,24 @@ def assign_folder_name(datasets_file):
         name = 'Misc'
     return name
 
-# class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
+class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+#class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
         default='HH/multilepton',
-        significant=False,
+        significant=True,
         description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
         default='2018',
-        significant=False,
+        significant=True,
         description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
         default='2lss_leq1tau',
-        significant=False,
+        significant=True,
         description="channel e.g. 2lss_leq1tau",
     )
 
@@ -125,8 +126,8 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
         )
 
 
-class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
-# class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+#class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
+class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     NTUPLE_FINAL_STORE = "/hdfs/local/"
 
@@ -135,19 +136,19 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
 
     analysis = luigi.Parameter(
         default='HH/multilepton',
-        significant=False,
+        significant=True,
         description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
         default='2018',
-        significant=False,
+        significant=True,
         description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
         default='2lss_leq1tau',
-        significant=False,
+        significant=True,
         description="channel e.g. 2lss_leq1tau",
     )
 
@@ -161,12 +162,6 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
         default='',
         significant=False,
         description="region e.g. 'SS_SR' or selection string",
-    )
-
-    mode = luigi.Parameter(
-        default='default',
-        significant=False,
-        description="mode e.g. default",
     )
 
     debug = luigi.BoolParameter(
@@ -191,7 +186,7 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
     def jobList(self):
         input_odict = self.input()['configs']['collection'].targets.values()
         config_paths = [path.path for path in list(input_odict)]
-        return config_paths[:2]
+        return config_paths
 
     def create_branch_map(self):
         branches = {}
@@ -275,7 +270,7 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
         outDirName = self.output().path.strip(outFileName)
         os.makedirs(outDirName, exist_ok=True)
         mvCMD = f"mv {outFileName} {outDirName}"
-        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD])
+        cmd = " && ".join([cdCMD, "produceNtuple " + str(self.branch_data), mvCMD, '|| return "$?"'])
         return cmd
 
 
@@ -287,19 +282,19 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
         default='HH/multilepton',
-        significant=False,
+        significant=True,
         description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
         default='2018',
-        significant=False,
+        significant=True,
         description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
         default='2lss_leq1tau',
-        significant=False,
+        significant=True,
         description="channel e.g. 2lss_leq1tau",
     )
 
@@ -328,7 +323,7 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
     )
 
     def workflow_requires(self):
-        return {'ntuples':ProdTallinnNTuples.req(self, _prefer_cli=["workflow","version"])}
+        return {'ntuples':ProdTallinnNTuples.req(self,workflow="slurm", _prefer_cli=["workflow","version"])}
 
     def create_branch_map(self):
         branches = {}
@@ -352,11 +347,11 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
     def createConfig(self, prms):
         template = self.template[:]
         template = template.replace('INFILE',prms[0])
-        outfilebase = prms[0].split('/')[-1].strip('ntuple_').strip('.root')+'_'+prms[1]
+        outfilebase = prms[0].split('/')[-1].strip('ntuple_').strip('.root')+'_'+prms[1]+'_'+prms[2]
         template = template.replace('ANOUTFILE',outfilebase+'.root')
-        template = template.replace('ANOUTFILE','rle_'+outfilebase+'.txt')
+        template = template.replace('SELEVOUTFILE','rle_'+outfilebase+'.txt')
         template = template.replace('SYSTORSHIFT',prms[2])
-        template = template.replace('PROCESS',outfilebase)
+        template = template.replace('PROCESS', translateProcessname(outfilebase))
         if self.channel == '2lss_leq1tau':
             template = template.replace('CHANNELINPUTS','from TallinnAnalysis.HistogramTools.datacard_HH_2lss_cfi import datacard_HH_2lss_nonresonant as histograms_datacard_HH_2lss_nonresonant, datacard_HH_2lss_resonant_spin0 as histograms_datacard_HH_2lss_resonant_spin0, datacard_HH_2lss_resonant_spin2 as histograms_datacard_HH_2lss_resonant_spin2')
             sel = ''
@@ -396,19 +391,19 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
 
     analysis = luigi.Parameter(
         default='HH/multilepton',
-        significant=False,
+        significant=True,
         description="analysis e.g. HH/multilepton",
     )
 
     era = luigi.Parameter(
         default='2018',
-        significant=False,
+        significant=True,
         description="era e.g. 2018",
     )
 
     channel = luigi.Parameter(
         default='2lss_leq1tau',
-        significant=False,
+        significant=True,
         description="channel e.g. 2lss_leq1tau",
     )
 
@@ -494,12 +489,91 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
         cdCMD = 'cd '+ self.workDir.path
         outFileName = self.output().path.split('/')[-1]
         outDirName = self.output().path.strip(outFileName)
-        mvCMD = "mv *.root " + outFileName + " && mv " + outFileName + " " + outDirName 
-        mvCMD2 = "mv *.json " + "rle_" + outFileName.replace('.root','.json') + " && mv " + "rle_" + outFileName.replace('root', 'json') + " " + outDirName
+        mvCMD = "mv " + outFileName + " " + outDirName 
+        mvCMD2 = "mv " + "rle_" + outFileName.replace('root', 'txt') + " " + outDirName
         #mvCMD ="mv "+ outFileName + " " + outDirName + "/" + outFileNameTarget
         #mvCMD2 ="mv "+ outFileNameJSON + " " + outDirName + "/rle_" + outFileNameTarget.replace('.root','.json')
-        cmd = cdCMD + ' && ' + 'analyze '+ str(self.branch_data) + ' && ' + mvCMD  + ' && ' + mvCMD2
+        cmd = cdCMD + ' && ' + 'analyze '+ str(self.branch_data) + ' && ' + mvCMD  + ' && ' + mvCMD2 + ' || return "$?"'
         return cmd
+
+
+# class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+#     default_store = "$ANALYSIS_ROOT_PATH"
+#     nchunks = luigi.Parameter(
+#         default=2,
+#         significant=False,
+#         description="Analysis files hadded in one job",
+#     )
+#     analysis = luigi.Parameter(
+#         default='HH/multilepton',
+#         significant=True,
+#         description="analysis e.g. HH/multilepton",
+#     )
+
+#     era = luigi.Parameter(
+#         default='2018',
+#         significant=True,
+#         description="era e.g. 2018",
+#     )
+
+#     channel = luigi.Parameter(
+#         default='2lss_leq1tau',
+#         significant=True,
+#         description="channel e.g. 2lss_leq1tau",
+#     )
+
+#     mode = luigi.Parameter(
+#         default='default',
+#         significant=False,
+#         description="mode e.g. default",
+#     )
+
+#     region = luigi.Parameter(
+#         default='',
+#         significant=False,
+#         description="region e.g. 'SS_SR' or selection string",
+#     )
+
+#     analysis_region = luigi.Parameter(
+#         default='OS_SR',
+#         significant=True,
+#         description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
+#     )
+
+#     withSyst =  luigi.BoolParameter(
+#         default=True,
+#         significant=False,
+#         description="with or without systematics"
+#     )
+
+#     debug = luigi.BoolParameter(
+#         default=False,
+#         significant=False,
+#         description='Whether keep the temporary files'
+#     )
+    
+#     def gethash(self):
+#         return 'haddAnalysisChunkFromRegion'+ str(law.util.create_hash(str(self.withSyst)  + self.analysis_region + self.channel + self.region + self.mode + self.analysis + self.era, to_int=True)) + '_' + self.chunks + '_' +self.version
+
+#     @law.cached_workflow_property
+#     def workDir(self):
+#         workDirName = os.path.expandvars('$ANALYSIS_WORKAREA') + ('/tmp_' + self.gethash())
+#         workDir = law.LocalDirectoryTarget(workDirName)
+#         workDir.touch()
+#         return workDir
+
+#     def create_branch_map(self):
+#         filelist = self.input()['configs']['collection'].targets.items()
+        
+#         branches = {}
+#         subbranch 
+#         for branch, branchdata in self.input()['configs']['collection'].targets.items():
+#             branches[branch]=branchdata.path
+#         return branches
+
+#     def workflow_requires(self):
+#         return {'analysisoutput':ProdTallinnAnalysisHistosForRegion.req(self,workflow='local',_prefer_cli=["workflow", "version","mode","region"])}
+
 
 
 """
