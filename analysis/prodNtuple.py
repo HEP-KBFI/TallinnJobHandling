@@ -8,6 +8,7 @@ from law.util import flatten
 import cataloging
 from analysis.tasks import KBFIBaseTask, CommandTask
 from analysis.utils.construct_cfg import write_cfg_file
+from analysis.utils.construct_cfg import read_json
 from analysis.utils.construct_cfg import chunk_fwliteInput_fileNames
 from analysis.framework import SlurmWorkflow
 from analysis.metadict_creation import MetaDictFractionCreator
@@ -29,8 +30,8 @@ def assign_folder_name(datasets_file):
         name = 'Misc'
     return name
 
-class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
-# class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
+# class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
+class CreateTallinnNtupleConfigs(KBFIBaseTask, law.LocalWorkflow):
     default_store = "$ANALYSIS_CONFIG_PATH"
     analysis = luigi.Parameter(
         default='HH/multilepton',
@@ -62,13 +63,6 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         description="region e.g. 'SS_SR' or selection string",
     )
 
-    tmp_root_output = luigi.Parameter(
-        default='',
-        significant=False,
-        description="Where .root files are stored temporarily",
-    )
-
-
     @law.cached_workflow_property
     def jobList(self):
         analysis_dir = os.path.join(
@@ -79,13 +73,22 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
 
     def create_branch_map(self):
         branchmap = {}
+        jobs = []
+        input_paths = []
         for idx, ds_file in enumerate(self.jobList):
             target_values = self.input()[ds_file]['collection'].targets.values()
-            input_paths = [target.path for target in target_values]
-            branchmap[idx] = {
-                'key': ds_file,
-                'input_paths': input_paths
-            }
+            input_paths.extend([target.path for target in target_values])
+        for input_path in input_paths:
+            dataset_cfi = read_json(input_path)
+            n_chunks = len(chunk_fwliteInput_fileNames(
+                dataset_cfi['dataset_files'], job_max_events=8640000))
+            for i in range(n_chunks):
+                jobs.append({
+                    "idx": i,
+                    "dataset_cfi": dataset_cfi,
+                })
+        for idx, job in enumerate(jobs):
+            branchmap[idx] = job
         return branchmap
 
     def requires(self):
@@ -102,32 +105,28 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
             }
 
     def output(self):
-        folder_name = assign_folder_name(self.branch_data['key'])
-        collection_file_path = f"collection_{folder_name}.txt"
-        return self.local_target(collection_file_path)
+        dataset_name = self.branch_data['dataset_cfi']['sample_name']
+        i = self.branch_data['idx']
+        config_path = os.path.join(f'{dataset_name}_tree_{i}_cfg.py')
+        return self.local_target(config_path)
 
     def run(self):
-        all_outputs = []
-        for dataset_cfg_path in self.branch_data['input_paths']:
-            dataset_name = dataset_cfg_path.split('/')[-1].split('.')[0]
-            output_dir = self.local_target(dataset_name)
-            output_paths = write_cfg_file(
-                    output_dir.path,
-                    dataset_cfg_path,
-                    self.analysis,
-                    self.era,
-                    self.channel,
-                    is_mc=True, # This needs to be done differently
-                    region=self.region
-            )
-            all_outputs.extend(output_paths)
-        with open(self.output().path, 'wt') as out_file:
-            for cfg_path in all_outputs:
-                out_file.write(cfg_path + '\n')
+        output_dir = os.path.dirname(self.output().path)
+        os.makedirs(output_dir, exist_ok=True)
+        output_paths = write_cfg_file(
+                self.output().path,
+                self.branch_data['dataset_cfi'],
+                self.branch_data['idx'],
+                self.analysis,
+                self.era,
+                self.channel,
+                is_mc=True, # This needs to be done differently
+                region=self.region
+        )
 
 
-# class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
-class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
+# class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     NTUPLE_FINAL_STORE = "/hdfs/local/"
 
@@ -191,11 +190,8 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     @law.cached_workflow_property
     def jobList(self):
         input_odict = self.input()['configs']['collection'].targets.values()
-        configs_path = list(input_odict)[0]
-        with open(configs_path.path, 'rt') as in_file:
-            config_paths = [line.strip('\n') for line in in_file]
-        return config_paths
-
+        config_paths = [path.path for path in list(input_odict)]
+        return config_paths[:2]
 
     def create_branch_map(self):
         branches = {}
@@ -267,13 +263,10 @@ class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
             "produceNTuple",
             self.analysis,
             self.era)
-        os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{tree_name}")
-        os.makedirs(output_dir, exist_ok=True)
         return self.local_target(output_path)
 
     def build_command(self):
-        tree_name = os.path.basename(self.branch_data).replace('_cfg.py', '.root')
         sample_name = os.path.basename(os.path.dirname(self.branch_data))
         tmp_output_dir = os.path.join(self.workDir.path, sample_name)
         os.makedirs(tmp_output_dir, exist_ok=True)
