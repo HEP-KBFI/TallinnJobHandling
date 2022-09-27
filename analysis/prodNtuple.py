@@ -190,11 +190,8 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
     @law.cached_workflow_property
     def jobList(self):
         input_odict = self.input()['configs']['collection'].targets.values()
-        configs_path = list(input_odict)[0]
-        with open(configs_path.path, 'rt') as in_file:
-            config_paths = [line.strip('\n') for line in in_file]
-        return config_paths
-
+        config_paths = [path.path for path in list(input_odict)]
+        return config_paths[:2]
 
     def create_branch_map(self):
         branches = {}
@@ -266,13 +263,10 @@ class ProdTallinnNTuples(CommandTask, law.LocalWorkflow):
             "produceNTuple",
             self.analysis,
             self.era)
-        os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{tree_name}")
-        os.makedirs(output_dir, exist_ok=True)
         return self.local_target(output_path)
 
     def build_command(self):
-        tree_name = os.path.basename(self.branch_data).replace('_cfg.py', '.root')
         sample_name = os.path.basename(os.path.dirname(self.branch_data))
         tmp_output_dir = os.path.join(self.workDir.path, sample_name)
         os.makedirs(tmp_output_dir, exist_ok=True)
