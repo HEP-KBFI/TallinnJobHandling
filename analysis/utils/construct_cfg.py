@@ -67,6 +67,8 @@ def collect_prodNtuple_entries(
             if key not in dataset_cfi.keys():
                 dataset_cfi[key] = value
             else:
+                if dataset_cfi[key] == value:
+                    continue
                 for sub_key, sub_value in value.items():
                     if type(sub_value) == dict:
                         if sub_key not in dataset_cfi[key].keys():
@@ -228,8 +230,9 @@ def fill_template(
 
 
 def write_cfg_file(
-        output_dir,
-        dataset_cfi_path,
+        output_path,
+        dataset_cfi,
+        idx,
         analysis,
         era,
         channel,
@@ -245,6 +248,8 @@ def write_cfg_file(
             Path to the directory where the config files will be written
         dataset_cfi_path : str
             Path to the config file of a given dataset.
+        idx : int
+            Index of the cfg
         analysis : str
             Name of the analysis for which the configs will be loaded.
         era : str
@@ -260,19 +265,14 @@ def write_cfg_file(
             List of the paths of the config files
     """
 
-    os.makedirs(output_dir, exist_ok=True)
-    dataset_cfi = read_json(dataset_cfi_path)
     dataset_cfg = collect_prodNtuple_entries(
             dataset_cfi=dataset_cfi,
             analysis=analysis,
             era=era,
             channel=channel
     )
-    output_paths = []
     fwliteIn_cfis, fwliteOut_cfis, lumiscales = construct_fwlite_cfi(dataset_cfi, **kwargs)
-    for i, (in_cfi, out_cfi, ls) in enumerate(zip(fwliteIn_cfis, fwliteOut_cfis, lumiscales)):
-        sample_name = dataset_cfi['sample_name']
-        output_path = os.path.join(output_dir, f'{sample_name}_tree_{i}_cfg.py')
-        fill_template(dataset_cfg, in_cfi, out_cfi, ls, output_path, region, **kwargs)
-        output_paths.append(output_path)
-    return output_paths
+    fill_template(
+        dataset_cfg, fwliteIn_cfis[idx], fwliteOut_cfis[idx],
+        lumiscales[idx], output_path, region, **kwargs
+    )
