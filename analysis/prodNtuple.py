@@ -613,7 +613,7 @@ class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow
                 cmd += 'hadd temp.root ' + chunk[i] + ' ' + chunk[i+1] + ' && mv temp.root merged.root &&'
             else:
                 cmd += 'hadd temp.root merged.root ' + chunk[i+1] + ' && mv temp.root merged.root &&'
-        cmd += f' mv merged.root {outDirName}/{outFileName} || return "$?"'
+        cmd += f' mv merged.root {outDirName}/{outFileName}'
         return cmd
 
 
@@ -723,7 +723,7 @@ class haddAnalysisFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
                 cmd += 'hadd temp.root ' + chunk[i] + ' ' + chunk[i+1] + ' && mv temp.root merged.root &&'
             else:
                 cmd += 'hadd temp.root merged.root ' + chunk[i+1] + ' && mv temp.root merged.root &&'
-        cmd += f' mv merged.root {outDirName}/{outFileName} || return "$?"'
+        cmd += f' mv merged.root {outDirName}/{outFileName}'
         return cmd
 
 
