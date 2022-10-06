@@ -126,7 +126,7 @@ class CreateTallinnNtupleConfigs(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow)
         )
 
 
-class ProdTallinnNTuples(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+class ProdTallinnNTuples(CommandTask, KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     NTUPLE_FINAL_STORE = "/hdfs/local/"
 
@@ -383,58 +383,10 @@ class TallinnAnalyzeConfigsForRegion(KBFIBaseTask, SlurmWorkflow, law.LocalWorkf
         output.dump(config,formatter='text')
 
 
-class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow, KBFIBaseTask):
     default_store = "$ANALYSIS_ROOT_PATH"
     def __init__(self, *args, **kwargs):
         super(ProdTallinnAnalysisHistosForRegion, self).__init__(*args, **kwargs)
-
-    analysis = luigi.Parameter(
-        default='HH/multilepton',
-        significant=True,
-        description="analysis e.g. HH/multilepton",
-    )
-
-    era = luigi.Parameter(
-        default='2018',
-        significant=True,
-        description="era e.g. 2018",
-    )
-
-    channel = luigi.Parameter(
-        default='2lss_leq1tau',
-        significant=True,
-        description="channel e.g. 2lss_leq1tau",
-    )
-
-    mode = luigi.Parameter(
-        default='default',
-        significant=False,
-        description="mode e.g. default",
-    )
-
-    region = luigi.Parameter(
-        default='',
-        significant=False,
-        description="region e.g. 'SS_SR' or selection string",
-    )
-
-    analysis_region = luigi.Parameter(
-        default='OS_SR',
-        significant=True,
-        description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
-    )
-
-    withSyst =  luigi.BoolParameter(
-        default=True,
-        significant=False,
-        description="with or without systematics"
-    )
-
-    debug = luigi.BoolParameter(
-        default=False,
-        significant=False,
-        description='Whether keep the temporary files'
-    )
 
     def gethash(self):
         return 'ProdTallinnAnalysisHistosForRegion'+ str(law.util.create_hash(str(self.withSyst)  + self.analysis_region + self.channel + self.region + self.mode + self.analysis + self.era, to_int=True)) + '_'+ self.version
@@ -493,7 +445,7 @@ class ProdTallinnAnalysisHistosForRegion(CommandTask, SlurmWorkflow, law.LocalWo
         cmd = cdCMD + ' && ' + 'analyze '+ str(self.branch_data) + ' && ' + mvCMD  + ' && ' + mvCMD2 + ' || return "$?"'
         return cmd
 
-class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
+class haddAnalysisChunksFromRegion(CommandTask, KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
     def __init__(self, *args, **kwargs):
         super(haddAnalysisChunksFromRegion, self).__init__(*args, **kwargs)
 
@@ -503,54 +455,6 @@ class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow
         significant=False,
         description="Analysis files hadded in one job",
     )
-    analysis = luigi.Parameter(
-        default='HH/multilepton',
-        significant=True,
-        description="analysis e.g. HH/multilepton",
-    )
-
-    era = luigi.Parameter(
-        default='2018',
-        significant=True,
-        description="era e.g. 2018",
-    )
-
-    channel = luigi.Parameter(
-        default='2lss_leq1tau',
-        significant=True,
-        description="channel e.g. 2lss_leq1tau",
-    )
-
-    mode = luigi.Parameter(
-        default='default',
-        significant=False,
-        description="mode e.g. default",
-    )
-
-    region = luigi.Parameter(
-        default='',
-        significant=False,
-        description="region e.g. 'SS_SR' or selection string",
-    )
-
-    analysis_region = luigi.Parameter(
-        default='OS_SR',
-        significant=True,
-        description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
-    )
-
-    withSyst =  luigi.BoolParameter(
-        default=True,
-        significant=False,
-        description="with or without systematics"
-    )
-
-    debug = luigi.BoolParameter(
-        default=False,
-        significant=False,
-        description='Whether keep the temporary files'
-    )
-
     def gethash(self):
         return 'haddAnalysisChunksFromRegion'+ str(law.util.create_hash(str(self.withSyst)  + self.analysis_region + self.channel + self.region + self.mode + self.analysis + self.era + str(self.nchunks), to_int=True)) + '_' +self.version
 
@@ -571,7 +475,7 @@ class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow
 
     def create_branch_map(self):
         fileList=self.fileList
-        #print(self.input())
+        branches = {}
         if len(fileList)<int(self.nchunks):
             raise ValueError(f"nchunk can not be higher than than the amounts of files to chunk! {len(fileList)}<{self.nchunks} ({fileList})")
         chunks = np.split(np.array(fileList), int(self.nchunks))
@@ -607,6 +511,8 @@ class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow
         outDirName = self.output().path.strip(outFileName)
         cmd = cdCMD + " && "
         chunk = self.branch_data
+        for f in chunk:
+            self.rm_files.append(f)
         if len(chunk)==1: return f'cp {chunk[0]} {outDirName}/{outFileName} || return "$?"'
         for i in range(len(chunk)-1):
             if i == 0:
@@ -616,7 +522,21 @@ class haddAnalysisChunksFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow
         cmd += f' mv merged.root {outDirName}/{outFileName}'
         return cmd
 
-
+class rmunwantedfiles(CommandTask, KBFIBaseTask):
+    def __init__(self, *args, **kwargs):
+        super(rmunwantedfiles, self).__init__(*args, **kwargs)
+    def requires(self):
+        return haddAnalysisChunksFromRegion.req(self)
+    def output(self):
+        return self.local_target('rmfile.txt')
+    def build_command(self):
+        rmfiles = ' '.join(f for f in self.rm_files)
+        cmd = f'rm {rmfiles}'
+        return cmd
+    def run(self):
+        cmd = self.build_command()
+        self.run_command(cmd)
+        self.output().dump('rmed files', formatter="text")
 class haddAnalysisFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     nchunks = luigi.Parameter(

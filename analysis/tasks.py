@@ -18,9 +18,59 @@ from analysis.framework import Task
 """
 Basic task class copied from hh-inference to handle custom file locations
 """
-class KBFIBaseTask(Task):
+class KBFIBaseTask(law.Task):
     version = luigi.Parameter(
         description="mandatory version that is encoded into output paths")
+
+    analysis = luigi.Parameter(
+        default='HH/multilepton',
+        significant=True,
+        description="analysis e.g. HH/multilepton",
+    )
+
+    era = luigi.Parameter(
+        default='2018',
+        significant=True,
+        description="era e.g. 2018",
+    )
+
+    channel = luigi.Parameter(
+        default='2lss_leq1tau',
+        significant=True,
+        description="channel e.g. 2lss_leq1tau",
+    )
+
+    mode = luigi.Parameter(
+        default='default',
+        significant=False,
+        description="mode e.g. default",
+    )
+
+    region = luigi.Parameter(
+        default='',
+        significant=False,
+        description="region e.g. 'SS_SR' or selection string",
+    )
+
+    analysis_region = luigi.Parameter(
+        default='OS_SR',
+        significant=True,
+        description="OS_SR/OS_Fakable/SS_SR/SS_Fakable",
+    )
+
+    withSyst =  luigi.BoolParameter(
+        default=True,
+        significant=False,
+        description="with or without systematics"
+    )
+
+    debug = luigi.BoolParameter(
+        default=False,
+        significant=False,
+        description='Whether keep the temporary files'
+    )
+
+    rm_files = []
     output_collection_cls = law.SiblingFileCollection
     default_store = "$ANALYSIS_DATA_PATH"
     store_by_family = False
@@ -28,16 +78,6 @@ class KBFIBaseTask(Task):
     @classmethod
     def modify_param_values(cls, params):
         return params
-
-    @classmethod
-    def req_params(cls, inst, **kwargs):
-        # always prefer certain parameters given as task family parameters (--TaskFamily-parameter)
-        _prefer_cli = law.util.make_list(kwargs.get("_prefer_cli", []))
-        if "version" not in _prefer_cli:
-            _prefer_cli.append("version")
-        kwargs["_prefer_cli"] = set(_prefer_cli) | cls.prefer_params_cli
-
-        return super(KBFIBaseTask, cls).req_params(inst, **kwargs)
 
     def __init__(self, *args, **kwargs):
         super(KBFIBaseTask, self).__init__(*args, **kwargs)
@@ -84,16 +124,6 @@ class KBFIBaseTask(Task):
     #def call_hook(self, name, **kwargs):
     #    return call_hook(name, self, **kwargs)
 
-    def _repr_params(self, *args, **kwargs):
-        params = super(KBFIBaseTask, self)._repr_params(*args, **kwargs)
-
-        # remove empty params by default
-        for key, value in list(params.items()):
-            if not value and value != 0:
-                del params[key]
-
-        return params
-
     def _print_command(self, args):
         max_depth = int(args[0])
 
@@ -133,7 +163,7 @@ class KBFIBaseTask(Task):
                 print(offset + law.util.colored("not a CommandTask", "yellow"))
 
 
-class CommandTask(KBFIBaseTask):
+class CommandTask(law.Task):
     """
     A task that provides convenience methods to work with shell commands, i.e., printing them on the
     command line and executing them with error handling.
