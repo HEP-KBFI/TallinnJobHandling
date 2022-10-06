@@ -91,14 +91,15 @@ class MetaDictFractionCreator(KBFIBaseTask, SlurmWorkflow, law.LocalWorkflow):
         return self.local_target(metadict_output_path)
 
     def run(self):
+        self.output = self.output()
         md_creator = MetaDictProducer(
             self.branch_data,
             self.era,
             cms_loc=self.cms_local_dir,
         )
-        metadict_output_dir = os.path.dirname(self.output().path)
+        metadict_output_dir = os.path.dirname(self.output.path)
         os.makedirs(metadict_output_dir, exist_ok=True)
-        with open(self.output().path, 'wt') as out_file:
+        with open(self.output.path, 'wt') as out_file:
             json.dump(md_creator.metadict, out_file, indent=4)
 
 
