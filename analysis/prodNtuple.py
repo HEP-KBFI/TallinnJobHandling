@@ -522,13 +522,13 @@ class haddAnalysisChunksFromRegion(CommandTask, KBFIBaseTask, SlurmWorkflow, law
         cmd += f' mv merged.root {outDirName}/{outFileName}'
         return cmd
 
-class rmunwantedfiles(CommandTask, KBFIBaseTask):
+class createhaddAnalysisChunksFromRegion(CommandTask, KBFIBaseTask):
     def __init__(self, *args, **kwargs):
-        super(rmunwantedfiles, self).__init__(*args, **kwargs)
+        super(createhaddAnalysisChunksFromRegion, self).__init__(*args, **kwargs)
     def requires(self):
         return haddAnalysisChunksFromRegion.req(self)
     def output(self):
-        return self.local_target('rmfile.txt')
+        return self.local_target('haddoutput.txt')
     def build_command(self):
         rmfiles = ' '.join(f for f in self.rm_files)
         cmd = f'rm {rmfiles}'
@@ -536,7 +536,7 @@ class rmunwantedfiles(CommandTask, KBFIBaseTask):
     def run(self):
         cmd = self.build_command()
         self.run_command(cmd)
-        self.output().dump('rmed files', formatter="text")
+        self.output().dump('haddAnalysisChunk root files are created and input analysis files are removed successfully', formatter="text")
 class haddAnalysisFromRegion(CommandTask, SlurmWorkflow, law.LocalWorkflow):
     default_store = "$ANALYSIS_ROOT_PATH"
     nchunks = luigi.Parameter(
